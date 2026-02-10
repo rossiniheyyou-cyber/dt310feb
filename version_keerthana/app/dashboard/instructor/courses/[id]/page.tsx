@@ -86,10 +86,6 @@ export default function InstructorCourseDetailPage() {
     );
   }
 
-  const previewHref = course.pathSlug
-    ? `/dashboard/learner/courses/${course.pathSlug}/${course.id}`
-    : "/dashboard/learner/courses/available";
-
   const handleModuleReorder = (fromIndex: number, toIndex: number) => {
     const next = [...modules];
     const [removed] = next.splice(fromIndex, 1);
@@ -396,14 +392,6 @@ export default function InstructorCourseDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              href={previewHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 text-sm font-medium"
-            >
-              Preview as Learner
-            </Link>
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-red-700 text-xs max-w-xs">
                 {error}
