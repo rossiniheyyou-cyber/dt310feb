@@ -44,6 +44,27 @@ export default function LoginPage() {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const getNextAuthErrorMessage = (code: string) => {
+    switch (code) {
+      case "OAuthCallback":
+        return "Microsoft sign-in failed while processing the callback. Please try again.";
+      case "OAuthSignin":
+        return "Could not start Microsoft sign-in. Please try again.";
+      case "OAuthCreateAccount":
+        return "We could not create your Microsoft account session. Please try again.";
+      case "AccessDenied":
+        return "Access denied during Microsoft sign-in.";
+      case "OAuthMissingEmail":
+        return "Microsoft account did not provide an email. Use an organizational account with email access.";
+      case "UserSyncFailed":
+        return "Microsoft sign-in succeeded, but your LMS profile sync failed. Please try again.";
+      case "Configuration":
+        return "Authentication configuration issue detected. Please contact support.";
+      default:
+        return "Microsoft sign-in failed. Please try again.";
+    }
+  };
+
   // Load previously used emails from localStorage
   useEffect(() => {
     const emails = JSON.parse(localStorage.getItem("loggedEmails") || "[]");
@@ -63,6 +84,19 @@ export default function LoginPage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Surface NextAuth callback errors on the login UI.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const authError = new URLSearchParams(window.location.search).get("error");
+    if (!authError) return;
+    if (mode !== "login") setMode("login");
+    setShowForgotPassword(false);
+    setForgotPasswordSuccess("");
+    setError(getNextAuthErrorMessage(authError));
+    // Clean URL after capturing the message to avoid stale callbackUrl/error states.
+    router.replace("/auth/login");
+  }, [mode, router]);
 
   // Validate email format
   const isValidEmail = (email: string) => {
@@ -200,7 +234,8 @@ export default function LoginPage() {
       });
 
       // Check if account requires approval
-      if (response.requiresApproval || response.user?.status === 'pending') {
+      const responseUserStatus = (response.user as { status?: string } | undefined)?.status;
+      if (response.requiresApproval || responseUserStatus === "pending") {
         setError("");
         alert("Account created successfully! Your account is pending admin approval. You will be able to log in once an administrator approves your request.");
         setMode("login");

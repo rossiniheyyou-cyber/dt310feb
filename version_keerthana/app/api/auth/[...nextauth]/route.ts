@@ -39,7 +39,10 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (account?.provider !== "azure-ad" || !user?.email) return true;
+      if (account?.provider !== "azure-ad") return true;
+      if (!user?.email) {
+        return "/auth/login?error=OAuthMissingEmail";
+      }
       try {
         const azureProfile = profile as { oid?: string; sub?: string };
         const azureId = azureProfile?.oid ?? azureProfile?.sub ?? null;
@@ -56,7 +59,7 @@ export const authOptions: NextAuthOptions = {
         return true;
       } catch (e) {
         console.error("Azure find-or-create error:", e);
-        return false;
+        return "/auth/login?error=UserSyncFailed";
       }
     },
     async jwt({ token, user }) {
