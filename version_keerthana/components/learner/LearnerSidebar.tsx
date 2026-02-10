@@ -9,8 +9,8 @@ const menuItems = [
   { label: "Dashboard", href: "/dashboard/learner", icon: LayoutDashboard },
   { label: "Progress", href: "/dashboard/learner/progress", icon: TrendingUp },
   { label: "Assignments", href: "/dashboard/learner/assignments", icon: ClipboardList },
-  { label: "Calendar", href: "/dashboard/calendar", icon: Calendar },
-  { label: "Notifications", href: "/dashboard/notifications", icon: Bell },
+  { label: "Calendar", href: "/dashboard/learner/calendar", icon: Calendar },
+  { label: "Notifications", href: "/dashboard/learner/notifications", icon: Bell },
   { label: "AI Quiz", href: "/dashboard/learner/ai-quiz", icon: HelpCircle },
 ];
 

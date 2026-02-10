@@ -17,8 +17,8 @@ const menuItems = [
   { label: "Courses", href: "/dashboard/instructor/courses", icon: BookOpen },
   { label: "Assessments", href: "/dashboard/instructor/assessments", icon: ClipboardList },
   { label: "Learners", href: "/dashboard/instructor/learners", icon: Users },
-  { label: "Calendar", href: "/dashboard/calendar", icon: Calendar },
-  { label: "Notifications", href: "/dashboard/notifications", icon: Bell },
+  { label: "Calendar", href: "/dashboard/instructor/calendar", icon: Calendar },
+  { label: "Notifications", href: "/dashboard/instructor/notifications", icon: Bell },
   { label: "Reports", href: "/dashboard/instructor/reports", icon: BarChart3 },
 ];
 

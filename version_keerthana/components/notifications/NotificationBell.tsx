@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Bell } from "lucide-react";
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from "@/lib/api/notifications";
 import type { Notification } from "@/lib/api/notifications";
@@ -11,6 +12,7 @@ interface NotificationBellProps {
 }
 
 export default function NotificationBell({ className = "" }: NotificationBellProps) {
+  const pathname = usePathname();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -89,6 +91,16 @@ export default function NotificationBell({ className = "" }: NotificationBellPro
     }
   };
 
+  const viewAllHref = pathname?.startsWith("/dashboard/admin")
+    ? "/dashboard/admin/notifications"
+    : pathname?.startsWith("/dashboard/instructor")
+      ? "/dashboard/instructor/notifications"
+      : pathname?.startsWith("/dashboard/manager")
+        ? "/dashboard/manager/notifications"
+        : pathname?.startsWith("/dashboard/learner")
+          ? "/dashboard/learner/notifications"
+          : "/dashboard/notifications";
+
   return (
     <div className={`relative ${className}`}>
       <button
@@ -133,7 +145,7 @@ export default function NotificationBell({ className = "" }: NotificationBellPro
                   </button>
                 )}
                 <Link
-                  href="/dashboard/notifications"
+                  href={viewAllHref}
                   onClick={() => setIsOpen(false)}
                   className="text-xs text-teal-600 hover:text-teal-700 font-medium"
                 >
