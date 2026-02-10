@@ -5,9 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 export default function AuthPendingPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status: authStatus } = useSession();
 
-  if (status === "loading") {
+  if (authStatus === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <p className="text-slate-600">Loading...</p>
@@ -31,8 +31,8 @@ export default function AuthPendingPage() {
     );
   }
 
-  const status = (session.user as { status?: string })?.status;
-  const isRevoked = status === "revoked";
+  const accountStatus = (session.user as { status?: string })?.status;
+  const isRevoked = accountStatus === "revoked";
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">

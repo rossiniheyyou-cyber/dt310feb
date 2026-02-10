@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, ChevronRight, BookOpen, Award, ClipboardCheck } from "lucide-react";
+import { Search, ChevronRight, BookOpen, Award, ClipboardCheck, Users } from "lucide-react";
 import { getCurrentUser } from "@/lib/currentUser";
 import {
   platformUsers,
