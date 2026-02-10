@@ -1,31 +1,40 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import AzureADProvider from "next-auth/providers/azure-ad";
 
-const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "http://localhost:3001";
+const backendUrl = (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/+$/, "");
 
 async function findOrCreateAzureUser(email: string, name: string | null, azureId: string | null) {
   const res = await fetch(`${backendUrl}/auth/azure/find-or-create`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    cache: "no-store",
     body: JSON.stringify({
       email,
       name: name || email,
       azureId: azureId || undefined,
     }),
   });
+
+  const payload = await res.json().catch(() => ({} as Record<string, unknown>));
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Failed to find or create user");
+    const message =
+      typeof payload.message === "string"
+        ? payload.message
+        : `Failed to find or create user (status ${res.status})`;
+    throw new Error(message);
   }
-  return res.json();
+  return payload as {
+    user: { id: string; role: string; isInternal?: boolean; status?: string };
+    token?: string | null;
+  };
 }
 
 export const authOptions: NextAuthOptions = {
   providers: [
     AzureADProvider({
-      clientId: process.env.AZURE_AD_CLIENT_ID!,
-      clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
-      tenantId: process.env.AZURE_AD_TENANT_ID!,
+      clientId: process.env.AZURE_AD_CLIENT_ID || "",
+      clientSecret: process.env.AZURE_AD_CLIENT_SECRET || "",
+      tenantId: process.env.AZURE_AD_TENANT_ID || "",
     }),
   ],
   callbacks: {
@@ -52,11 +61,18 @@ export const authOptions: NextAuthOptions = {
     },
     async jwt({ token, user }) {
       if (user) {
-        token.backendUserId = (user as Record<string, unknown>).backendUserId;
-        token.role = (user as Record<string, unknown>).role;
-        token.isInternal = (user as Record<string, unknown>).isInternal;
-        token.status = (user as Record<string, unknown>).status ?? "active";
-        token.backendAccessToken = (user as Record<string, unknown>).backendAccessToken ?? null;
+        const userLike = user as Record<string, unknown>;
+        token.backendUserId =
+          typeof userLike.backendUserId === "string" ? userLike.backendUserId : undefined;
+        token.role = typeof userLike.role === "string" ? userLike.role : undefined;
+        token.isInternal =
+          typeof userLike.isInternal === "boolean" ? userLike.isInternal : undefined;
+        token.status =
+          userLike.status === "pending" || userLike.status === "revoked" || userLike.status === "active"
+            ? userLike.status
+            : "active";
+        token.backendAccessToken =
+          typeof userLike.backendAccessToken === "string" ? userLike.backendAccessToken : null;
       }
       return token;
     },
