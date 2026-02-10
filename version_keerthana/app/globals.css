@@ -1,0 +1,403 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f2f2f;
+  --teal-primary: #0fa8a8;
+  --teal-dark: #0c8888;
+  --teal-light: #1abc9c;
+  --teal-50: #f0fdfa;
+  --teal-100: #ccfbf1;
+  --teal-200: #99f6e4;
+  --teal-300: #5eead4;
+  --teal-400: #2dd4bf;
+  --teal-500: #14b8a6;
+  --teal-600: #0d9488;
+  --teal-700: #0f766e;
+  --teal-800: #115e59;
+  --teal-900: #134e4a;
+}
+
+/* =================================
+   DigitalT3 – Modern Premium Theme
+   Inspired by Docebo, Branded DigitalT3
+================================= */
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Enhanced typography with San Francisco font */
+@font-face {
+  font-family: 'San Francisco';
+  src: url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  font-display: swap;
+}
+
+body {
+  @apply antialiased;
+  font-feature-settings: "kern" 1, "liga" 1;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Helvetica", "Arial", "Inter", sans-serif;
+}
+
+/* BACKGROUND OVERRIDES */
+.bg-blue-500,
+.bg-blue-600,
+.bg-blue-700 {
+  background-color: #008080 !important;
+}
+
+.hover\:bg-blue-600:hover,
+.hover\:bg-blue-700:hover {
+  background-color: #006666 !important;
+}
+
+/* TEXT COLOR OVERRIDES */
+.text-blue-500,
+.text-blue-600 {
+  color: #008080 !important;
+}
+
+/* BORDER OVERRIDES */
+.border-blue-500,
+.border-blue-600 {
+  border-color: rgba(0, 128, 128, 0.3) !important;
+}
+
+/* Premium Card Styles */
+.card {
+  @apply bg-white rounded-xl border border-slate-200/60 shadow-sm;
+  @apply transition-all duration-300 ease-out;
+  padding: 1.5rem;
+  background: linear-gradient(to bottom, #ffffff 0%, #fafafa 100%);
+}
+
+.card:hover {
+  @apply shadow-lg border-teal-200/60;
+  transform: translateY(-2px);
+}
+
+/* Modern Shadow System */
+.shadow-soft {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.shadow-medium {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-large {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-teal {
+  box-shadow: 0 4px 16px rgba(0, 128, 128, 0.15), 0 2px 6px rgba(0, 128, 128, 0.1);
+}
+
+/* Premium Button Styles */
+.btn-primary {
+  @apply px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white font-medium rounded-lg;
+  @apply shadow-md hover:shadow-lg transition-all duration-200;
+  @apply hover:from-teal-700 hover:to-teal-800;
+  @apply active:scale-[0.98];
+}
+
+.btn-secondary {
+  @apply px-6 py-3 bg-white text-teal-700 font-medium rounded-lg border border-teal-200;
+  @apply shadow-sm hover:shadow-md transition-all duration-200;
+  @apply hover:bg-teal-50 active:scale-[0.98];
+}
+
+/* Gradient Backgrounds */
+.gradient-teal {
+  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+}
+
+.gradient-teal-light {
+  background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%);
+}
+
+.gradient-overlay {
+  background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.02) 100%);
+}
+
+/* Section Title */
+.section-title {
+  @apply text-teal-700 font-semibold text-lg mb-4;
+  letter-spacing: -0.01em;
+}
+
+/* Smooth Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Hover Effects */
+.hover-lift {
+  @apply transition-all duration-300 ease-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  @apply shadow-lg;
+}
+
+.hover-glow {
+  @apply transition-all duration-300 ease-out;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(0, 128, 128, 0.2);
+}
+
+/* Focus States */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2;
+}
+
+/* Glass Morphism Effect */
+.glass {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Progress Bar Enhancement */
+.progress-bar {
+  @apply h-2 bg-slate-200 rounded-full overflow-hidden;
+}
+
+.progress-fill {
+  @apply h-full bg-gradient-to-r from-teal-500 to-teal-600 rounded-full;
+  @apply transition-all duration-500 ease-out;
+  box-shadow: 0 2px 4px rgba(0, 128, 128, 0.3);
+}
+
+/* Badge Styles */
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  @apply bg-teal-100 text-teal-800 border border-teal-200;
+}
+
+/* Input Enhancements */
+.input-modern {
+  @apply w-full px-4 py-3 rounded-lg border border-slate-300;
+  @apply focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent;
+  @apply transition-all duration-200;
+  @apply bg-white;
+}
+
+.input-modern:focus {
+  box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1);
+}
+
+/* Card Grid Enhancement */
+.card-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+/* Flashy Card Hover Effects */
+.card-flashy {
+  @apply relative overflow-hidden;
+  @apply transition-all duration-500 ease-out;
+  @apply hover:shadow-2xl hover:-translate-y-2;
+}
+
+.card-flashy::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.card-flashy:hover::before {
+  left: 100%;
+}
+
+.card-flashy:hover {
+  @apply border-teal-400;
+  box-shadow: 0 20px 40px rgba(0, 128, 128, 0.2), 0 0 0 1px rgba(0, 128, 128, 0.1);
+}
+
+/* Enhanced Hover Glow */
+.hover-glow-intense {
+  @apply transition-all duration-300;
+}
+
+.hover-glow-intense:hover {
+  box-shadow: 
+    0 0 20px rgba(0, 128, 128, 0.3),
+    0 0 40px rgba(0, 128, 128, 0.2),
+    0 0 60px rgba(0, 128, 128, 0.1);
+  transform: translateY(-4px) scale(1.02);
+}
+
+/* Interactive Fun Elements */
+.bounce-on-hover {
+  @apply transition-transform duration-300;
+}
+
+.bounce-on-hover:hover {
+  animation: bounce 0.6s ease-in-out;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(0, 128, 128, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(0, 128, 128, 0.6), 0 0 30px rgba(0, 128, 128, 0.4);
+  }
+}
+
+/* Fun Interactive Cards */
+.card-interactive {
+  @apply relative overflow-hidden;
+  @apply transition-all duration-500 ease-out;
+  @apply hover:shadow-2xl hover:-translate-y-3;
+  @apply cursor-pointer;
+}
+
+.card-interactive::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 128, 128, 0.1) 0%, transparent 70%);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.card-interactive:hover::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 50%, #2dd4bf 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animated Background Pattern */
+.animated-bg {
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(0, 128, 128, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(0, 128, 128, 0.05) 0%, transparent 50%);
+  background-size: 200% 200%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Fun Button Hover Effects */
+.btn-fun {
+  @apply relative overflow-hidden;
+  @apply transition-all duration-300;
+}
+
+.btn-fun::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.btn-fun:hover::before {
+  left: 100%;
+}
+
+.btn-fun:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 10px 25px rgba(0, 128, 128, 0.3);
+}
+
+/* Loading States */
+.skeleton {
+  @apply animate-pulse bg-slate-200 rounded;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400;
+}
+
+/* Hide scrollbar for horizontal rows (Netflix-style) */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
