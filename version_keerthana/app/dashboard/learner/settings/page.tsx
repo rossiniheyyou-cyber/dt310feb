@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { getCurrentUser, setCurrentUser, PROFESSIONAL_TITLES } from "@/lib/currentUser";
 import { updateProfile } from "@/lib/api/auth";
+import { getLearningProfile, updateLearningProfile } from "@/lib/api/learningProfile";
 
 const SECTIONS = [
   { id: "profile", label: "Profile Settings", icon: User },
@@ -194,7 +195,7 @@ function ProfileSettings({
         </p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div className="flex items-start gap-6">
           <div className="relative flex-shrink-0">
             <div className="w-24 h-24 rounded-full bg-teal-100 flex items-center justify-center">
@@ -302,7 +303,7 @@ function AccountSecurity({ user }: { user: ProfileUser }) {
         </p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div>
           <h3 className="text-sm font-semibold text-slate-800 mb-4">
             Change password
@@ -478,7 +479,7 @@ function NotificationPreferences() {
         </p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div>
           <h3 className="text-sm font-semibold text-slate-800 mb-4">
             Email notifications
@@ -542,12 +543,50 @@ function NotificationPreferences() {
   );
 }
 
+const TARGET_ROLES = [
+  { slug: "fullstack", label: "Full Stack Developer" },
+  { slug: "uiux", label: "UI / UX Designer" },
+  { slug: "data-analyst", label: "Data Analyst / Engineer" },
+  { slug: "cloud-devops", label: "Cloud & DevOps / Cyber Security" },
+  { slug: "qa", label: "Software Tester / QA Engineer" },
+  { slug: "digital-marketing", label: "Digital Marketing" },
+];
+
 /* --- Learning Preferences --- */
 function LearningPreferences() {
   const [language, setLanguage] = useState("en");
   const [contentPref, setContentPref] = useState("mixed");
   const [playbackSpeed, setPlaybackSpeed] = useState("1");
   const [resumeLesson, setResumeLesson] = useState(true);
+  const [targetRole, setTargetRole] = useState("");
+  const [goal, setGoal] = useState("");
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+
+  useEffect(() => {
+    getLearningProfile()
+      .then((p) => {
+        setTargetRole(p.targetRole || "");
+        setGoal(p.goal || "");
+      })
+      .catch(() => {})
+      .finally(() => setProfileLoaded(true));
+  }, []);
+
+  const handleSaveLearningTarget = async () => {
+    if (!targetRole) return;
+    setProfileSaving(true);
+    try {
+      await updateLearningProfile({
+        targetRole,
+        goal,
+        recommendedPathSlug: targetRole,
+        completedOnboarding: true,
+      });
+    } finally {
+      setProfileSaving(false);
+    }
+  };
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -556,11 +595,64 @@ function LearningPreferences() {
           Learning Preferences
         </h1>
         <p className="text-slate-500 text-sm mt-1">
-          Customize your learning experience
+          Customize your learning experience and target role
         </p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+        {/* Target Role - change anytime to get new learning paths */}
+        <div>
+          <h3 className="text-sm font-semibold text-slate-800 mb-3">
+            Target Role / Learning Goal
+          </h3>
+          <p className="text-slate-500 text-sm mb-4">
+            Change your target role anytime. The AI will build your learning path based on this.
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                What do you want to be?
+              </label>
+              <select
+                value={targetRole}
+                onChange={(e) => setTargetRole(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              >
+                <option value="">Select target role</option>
+                {TARGET_ROLES.map((r) => (
+                  <option key={r.slug} value={r.slug}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                Your goal (optional)
+              </label>
+              <textarea
+                value={goal}
+                onChange={(e) => setGoal(e.target.value)}
+                placeholder="e.g., I want to build web applications"
+                rows={2}
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"
+              />
+            </div>
+            {profileLoaded && (
+              <button
+                type="button"
+                onClick={handleSaveLearningTarget}
+                disabled={profileSaving}
+                className="px-5 py-2.5 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition disabled:opacity-50"
+              >
+                {profileSaving ? "Saving..." : "Save Learning Target"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        <hr className="border-slate-200" />
+
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">
             Preferred language
@@ -640,7 +732,7 @@ function AccessibilitySettings() {
         </p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">
             Font size
@@ -702,7 +794,7 @@ function PrivacyData() {
         </p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">
             Profile visibility
@@ -782,7 +874,7 @@ function LinkedAccounts() {
         </p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-4 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         {accounts.map((acc) => (
           <div
             key={acc.name}
@@ -832,7 +924,7 @@ function SystemPreferences() {
         </p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">
             Theme preference
@@ -897,7 +989,7 @@ function SupportHelp() {
         </p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div className="flex items-start gap-4 p-4 rounded-lg border border-slate-200 hover:border-teal-200 transition">
           <div className="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center flex-shrink-0">
             <HelpCircle size={20} className="text-teal-600" />
@@ -975,7 +1067,7 @@ function AccountActions() {
         </p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div>
           <h3 className="text-sm font-semibold text-slate-800 mb-2">
             Request account deactivation

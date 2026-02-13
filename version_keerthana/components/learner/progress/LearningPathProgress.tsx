@@ -10,7 +10,7 @@ import {
   Calendar,
   Clock,
 } from "lucide-react";
-import { learningPathProgress } from "@/data/progressData";
+import { useLearnerProgressPage } from "@/context/LearnerProgressPageContext";
 
 function getPhaseStatusIcon(status: string) {
   switch (status) {
@@ -38,12 +38,25 @@ function getPhaseStatusColor(status: string) {
   }
 }
 
+const defaultPath = {
+  pathId: "fullstack",
+  pathTitle: "Learning Path",
+  description: "Track your progress",
+  totalDuration: "—",
+  overallProgress: 0,
+  enrolledDate: null as string | null,
+  expectedCompletion: null as string | null,
+  phases: [] as Array<{ id: string; name: string; totalCourses: number; completedCourses: number; status: string }>,
+};
+
 export default function LearningPathProgress() {
   const [expanded, setExpanded] = useState(true);
-  const data = learningPathProgress;
+  const { data } = useLearnerProgressPage();
+  const pathData = data?.learningPath ?? defaultPath;
 
-  const totalCourses = data.phases.reduce((sum, p) => sum + p.totalCourses, 0);
-  const completedCourses = data.phases.reduce((sum, p) => sum + p.completedCourses, 0);
+  const totalCourses = pathData.phases.reduce((sum, p) => sum + p.totalCourses, 0);
+  const completedCourses = pathData.phases.reduce((sum, p) => sum + p.completedCourses, 0);
+  const enrollments = data?.enrollments ?? [];
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
@@ -61,20 +74,20 @@ export default function LearningPathProgress() {
             )}
             <div>
               <h2 className="text-lg font-semibold text-slate-800">
-                Learning Path: {data.pathTitle}
+                Learning Path: {pathData.pathTitle}
               </h2>
-              <p className="text-sm text-slate-500 mt-0.5">{data.description}</p>
+              <p className="text-sm text-slate-500 mt-0.5">{pathData.description}</p>
             </div>
           </div>
           <div className="flex items-center gap-6">
             <div className="text-right">
-              <p className="text-2xl font-bold text-teal-600">{data.overallProgress}%</p>
+              <p className="text-2xl font-bold text-teal-600">{pathData.overallProgress}%</p>
               <p className="text-xs text-slate-500">Overall Progress</p>
             </div>
             <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-teal-500 rounded-full"
-                style={{ width: `${data.overallProgress}%` }}
+                style={{ width: `${pathData.overallProgress}%` }}
               />
             </div>
           </div>
@@ -84,34 +97,38 @@ export default function LearningPathProgress() {
         <div className="flex items-center gap-6 mt-4 ml-8 text-sm text-slate-600">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-slate-400" />
-            <span>Duration: {data.totalDuration}</span>
+            <span>Duration: {pathData.totalDuration}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-slate-400" />
-            <span>Started: {new Date(data.enrolledDate).toLocaleDateString()}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-slate-400" />
-            <span>Expected: {new Date(data.expectedCompletion).toLocaleDateString()}</span>
-          </div>
+          {pathData.enrolledDate && (
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-slate-400" />
+              <span>Started: {new Date(pathData.enrolledDate).toLocaleDateString()}</span>
+            </div>
+          )}
+          {pathData.expectedCompletion && (
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-slate-400" />
+              <span>Expected: {new Date(pathData.expectedCompletion).toLocaleDateString()}</span>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-slate-400" />
             <span>
-              {completedCourses} / {totalCourses} courses completed
+              {pathData.phases.length > 0 ? `${completedCourses} / ${totalCourses} courses` : `${enrollments.filter((e) => e.courseCompleted).length} / ${enrollments.length} courses`} completed
             </span>
           </div>
         </div>
       </div>
 
-      {/* Phases */}
+      {/* Phases or Enrollments */}
       {expanded && (
         <div className="border-t border-slate-200 p-6 pt-4">
           <div className="relative">
-            {/* Vertical Line */}
-            <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-slate-200" />
-
-            <div className="space-y-3">
-              {data.phases.map((phase, index) => {
+            {pathData.phases.length > 0 ? (
+              <>
+                <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-slate-200" />
+                <div className="space-y-3">
+                  {pathData.phases.map((phase) => {
                 const phaseProgress =
                   phase.totalCourses > 0
                     ? Math.round((phase.completedCourses / phase.totalCourses) * 100)
@@ -171,7 +188,43 @@ export default function LearningPathProgress() {
                   </div>
                 );
               })}
-            </div>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-3">
+                {enrollments.length === 0 ? (
+                  <p className="text-sm text-slate-500 py-4">No courses enrolled yet. Browse courses to get started.</p>
+                ) : (
+                  enrollments.map((e) => (
+                    <div
+                      key={e.courseId}
+                      className={`flex items-center gap-4 rounded-lg border p-4 ${
+                        e.courseCompleted ? "border-emerald-200 bg-emerald-50" : "border-teal-200 bg-teal-50"
+                      }`}
+                    >
+                      {e.courseCompleted ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-teal-500 fill-teal-100 flex-shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-slate-800 truncate">{e.courseTitle}</h3>
+                        <p className="text-xs text-slate-500">
+                          {e.completedLessons} / {e.totalLessons} lessons
+                        </p>
+                      </div>
+                      <div className="w-24 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-teal-500 rounded-full"
+                          style={{ width: `${e.progress}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium text-slate-700">{e.progress}%</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

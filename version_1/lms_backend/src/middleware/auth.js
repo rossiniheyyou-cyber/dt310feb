@@ -38,16 +38,19 @@ async function auth(req, res, next) {
     try {
       user = await userRepo.findOne({
         where: { id: userId },
-        select: { id: true, email: true, name: true, role: true, professionalTitle: true },
+        select: { id: true, email: true, name: true, role: true, professionalTitle: true, learningProfile: true },
       });
     } catch (colErr) {
       const msg = colErr && colErr.message ? String(colErr.message) : '';
-      if (msg.includes('Unknown column') || msg.includes('professionalTitle') || colErr.code === 'ER_BAD_FIELD_ERROR') {
+      if (msg.includes('Unknown column') || msg.includes('professionalTitle') || msg.includes('learningProfile') || colErr.code === 'ER_BAD_FIELD_ERROR') {
         user = await userRepo.findOne({
           where: { id: userId },
           select: { id: true, email: true, name: true, role: true },
         });
-        if (user) user.professionalTitle = null;
+        if (user) {
+          user.professionalTitle = null;
+          user.learningProfile = null;
+        }
       } else {
         throw colErr;
       }
@@ -63,6 +66,7 @@ async function auth(req, res, next) {
       name: user.name,
       role: user.role,
       professionalTitle: user.professionalTitle ?? undefined,
+      learningProfile: user.learningProfile ?? undefined,
     };
 
     return next();

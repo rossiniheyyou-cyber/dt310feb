@@ -124,7 +124,7 @@ export default function AvailableCoursesPage() {
                     <Link
                       key={course.id}
                       href={`/dashboard/learner/courses/${path.slug}/${course.id}`}
-                      className="card-flashy group relative bg-white border border-slate-200/60 rounded-2xl p-6 shadow-soft block"
+                      className="card-flashy group relative rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200/60 p-6 shadow-soft block"
                     >
                       {/* Gradient overlay on hover */}
                       <div className="absolute inset-0 bg-gradient-to-br from-teal-50/0 to-teal-50/0 group-hover:from-teal-50/50 group-hover:to-transparent transition-all duration-300 pointer-events-none"></div>
@@ -199,7 +199,7 @@ export default function AvailableCoursesPage() {
                     <Link
                       key={course.id}
                       href={`/dashboard/learner/courses/${course.pathSlug}/${course.id}`}
-                      className="group bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:border-teal-200 hover:shadow-md transition block"
+                      className="group rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 block"
                     >
                       <div className="flex items-start gap-4 mb-4">
                         <div className="w-12 h-12 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">

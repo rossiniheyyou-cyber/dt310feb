@@ -52,10 +52,9 @@ export default function ComplianceStatus() {
   const completedCount = complianceItems.filter((c) => c.status === "completed").length;
   const inProgressCount = complianceItems.filter((c) => c.status === "in_progress").length;
   const overdueCount = complianceItems.filter((c) => c.status === "overdue").length;
-  const mandatoryItems = complianceItems.filter((c) => c.type === "mandatory");
-  const mandatoryCompleted = mandatoryItems.filter((c) => c.status === "completed").length;
-
-  const compliancePercentage = Math.round((mandatoryCompleted / mandatoryItems.length) * 100);
+  const totalItems = complianceItems.length;
+  const completedItems = complianceItems.filter((c) => c.status === "completed").length;
+  const compliancePercentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-6">
@@ -66,7 +65,7 @@ export default function ComplianceStatus() {
           </div>
           <div>
             <h2 className="text-lg font-semibold text-slate-800">Compliance Status</h2>
-            <p className="text-sm text-slate-500">Mandatory training completion</p>
+            <p className="text-sm text-slate-500">Training completion</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -109,8 +108,8 @@ export default function ComplianceStatus() {
           <p className="text-xs text-red-600">Overdue</p>
         </div>
         <div className="bg-slate-50 rounded-lg p-3 text-center border border-slate-100">
-          <p className="text-2xl font-bold text-slate-700">{mandatoryItems.length}</p>
-          <p className="text-xs text-slate-600">Total Mandatory</p>
+          <p className="text-2xl font-bold text-slate-700">{totalItems}</p>
+          <p className="text-xs text-slate-600">Total Assigned</p>
         </div>
       </div>
 
@@ -121,7 +120,7 @@ export default function ComplianceStatus() {
             <AlertTriangle className="w-5 h-5 text-red-600" />
             <div>
               <p className="text-sm font-medium text-red-800">
-                {overdueCount} mandatory training{overdueCount > 1 ? "s are" : " is"} overdue
+                {overdueCount} training{overdueCount > 1 ? "s are" : " is"} overdue
               </p>
               <p className="text-xs text-red-600 mt-0.5">
                 Complete overdue items immediately to maintain compliance

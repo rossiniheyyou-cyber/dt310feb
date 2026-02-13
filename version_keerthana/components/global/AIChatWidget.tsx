@@ -173,20 +173,20 @@ export default function AIChatWidget() {
       {/* Toggle button - fixed bottom-right, icon only, no box/circle */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-6 right-6 z-40 p-0 m-0 bg-transparent border-0 outline-none focus:outline-none hover:opacity-90 transition flex items-center justify-center cursor-pointer [&_img]:block [&_img]:bg-transparent"
+        className="fixed bottom-2 right-2 z-40 p-0 m-0 bg-transparent border-0 outline-none focus:outline-none hover:opacity-90 transition flex items-end justify-end cursor-pointer [&_img]:block [&_img]:bg-transparent"
         aria-label={open ? "Close chat" : "Open help chat"}
       >
         {open ? (
           <Minimize2 size={32} className="text-slate-600" />
         ) : (
-          <img src="/chatbot-icon.png" alt="AI Assistant" width={128} height={128} className="block w-32 h-32 object-contain object-center bg-transparent drop-shadow-lg" style={{ minWidth: 128, minHeight: 128 }} />
+          <img src="/chatbot-icon.png" alt="AI Assistant" width={200} height={200} className="block w-[200px] h-[200px] object-contain object-center bg-transparent drop-shadow-lg" style={{ minWidth: 200, minHeight: 200 }} />
         )}
       </button>
 
       {/* Chat panel */}
       {open && (
         <div
-          className="fixed bottom-24 right-6 z-40 w-[380px] max-w-[calc(100vw-3rem)] bg-white border border-slate-200 rounded-xl shadow-xl flex flex-col overflow-hidden"
+          className="fixed bottom-[216px] right-2 z-40 w-[380px] max-w-[calc(100vw-3rem)] bg-white border border-slate-200 rounded-xl shadow-xl flex flex-col overflow-hidden"
           style={{ maxHeight: "min(500px, 70vh)" }}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">

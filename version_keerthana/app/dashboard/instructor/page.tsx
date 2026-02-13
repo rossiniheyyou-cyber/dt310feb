@@ -90,7 +90,7 @@ export default function InstructorDashboard() {
           return (
             <div
               key={kpi.label}
-              className={`bg-white border ${kpi.borderColor} rounded-xl p-5 hover:shadow-sm transition`}
+              className={`rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border ${kpi.borderColor} p-5 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300`}
             >
               <div className="flex items-start justify-between">
                 <div className={`p-2.5 rounded-lg ${kpi.bgColor}`}>
@@ -107,7 +107,7 @@ export default function InstructorDashboard() {
         {/* Alerts & Quick Actions Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Overdue Reviews Alert */}
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-amber-50/50">
             <div className="flex items-center gap-2">
               <Bell className="w-5 h-5 text-amber-600" />
@@ -153,7 +153,7 @@ export default function InstructorDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <h2 className="font-semibold text-slate-800 mb-4">Quick Actions</h2>
           <div className="space-y-3">
             {quickActions.map((action) => {
@@ -162,7 +162,7 @@ export default function InstructorDashboard() {
                 <Link
                   key={action.label}
                   href={action.href}
-                  className="flex items-center gap-4 p-4 rounded-lg border border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 transition group"
+                  className="flex items-center gap-4 p-4 rounded-lg border border-slate-200/80 bg-slate-50/80 hover:border-teal-200 hover:bg-teal-50/50 transition-all group"
                 >
                   <div className="p-2.5 rounded-lg bg-teal-50 group-hover:bg-teal-100">
                     <Icon className="w-5 h-5 text-teal-600" />
@@ -182,7 +182,7 @@ export default function InstructorDashboard() {
         </div>
 
         {/* Recent Activity / Summary */}
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <h2 className="font-semibold text-slate-800 mb-4">At a Glance</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex items-center gap-4">

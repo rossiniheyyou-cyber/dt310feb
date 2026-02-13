@@ -93,7 +93,6 @@ async function syncBackendCourses(): Promise<CanonicalCourse[]> {
         roles: apiCourse.tags.length > 0 ? apiCourse.tags : ["General"],
         phase: "Foundation",
         courseOrder: 1,
-        isMandatory: false,
         prerequisiteCourseIds: [],
         modules: [],
         instructor: {

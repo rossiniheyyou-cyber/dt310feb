@@ -11,37 +11,65 @@ import {
   Line,
 } from "recharts";
 import { Clock, TrendingUp, Video, FileText, HelpCircle, Download } from "lucide-react";
-import { timeActivityData } from "@/data/progressData";
+import { useLearnerProgressPage } from "@/context/LearnerProgressPageContext";
+
+const defaultTimeActivity = {
+  totalHoursThisWeek: 0,
+  totalHoursThisMonth: 0,
+  averageDailyHours: 0,
+  weeklyTrend: [
+    { week: "Week 1", hours: 0 },
+    { week: "Week 2", hours: 0 },
+    { week: "Week 3", hours: 0 },
+    { week: "Week 4", hours: 0 },
+  ],
+  dailyActivity: [
+    { day: "Mon", date: "", hours: 0 },
+    { day: "Tue", date: "", hours: 0 },
+    { day: "Wed", date: "", hours: 0 },
+    { day: "Thu", date: "", hours: 0 },
+    { day: "Fri", date: "", hours: 0 },
+    { day: "Sat", date: "", hours: 0 },
+    { day: "Sun", date: "", hours: 0 },
+  ],
+  activitySummary: {
+    videosWatched: 0,
+    assignmentsSubmitted: 0,
+    quizzesCompleted: 0,
+    resourcesDownloaded: 0,
+  },
+};
 
 export default function TimeActivitySection() {
-  const data = timeActivityData;
+  const { data } = useLearnerProgressPage();
+  const timeData = data?.timeActivity ?? defaultTimeActivity;
 
   const activityItems = [
     {
       icon: Video,
-      label: "Videos Watched",
-      value: data.activitySummary.videosWatched,
+      label: "Lessons Completed",
+      value: timeData.activitySummary.videosWatched,
       color: "text-teal-600",
       bgColor: "bg-teal-50",
     },
     {
       icon: FileText,
       label: "Assignments Submitted",
-      value: data.activitySummary.assignmentsSubmitted,
+      value: timeData.activitySummary.assignmentsSubmitted,
       color: "text-indigo-600",
       bgColor: "bg-indigo-50",
     },
     {
       icon: HelpCircle,
       label: "Quizzes Completed",
-      value: data.activitySummary.quizzesCompleted,
+      value: timeData.activitySummary.quizzesCompleted,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
     },
     {
       icon: Download,
       label: "Resources Downloaded",
-      value: data.activitySummary.resourcesDownloaded,
+      value: timeData.activitySummary.resourcesDownloaded,
       color: "text-orange-600",
       bgColor: "bg-orange-50",
     },
@@ -65,7 +93,7 @@ export default function TimeActivitySection() {
             <Clock className="w-5 h-5 text-teal-600" />
             <span className="text-sm text-teal-700">This Week</span>
           </div>
-          <p className="text-2xl font-bold text-teal-800">{data.totalHoursThisWeek}h</p>
+          <p className="text-2xl font-bold text-teal-800">{timeData.totalHoursThisWeek}h</p>
           <p className="text-xs text-teal-600 mt-1">Learning time</p>
         </div>
 
@@ -74,7 +102,7 @@ export default function TimeActivitySection() {
             <Clock className="w-5 h-5 text-indigo-600" />
             <span className="text-sm text-indigo-700">This Month</span>
           </div>
-          <p className="text-2xl font-bold text-indigo-800">{data.totalHoursThisMonth}h</p>
+          <p className="text-2xl font-bold text-indigo-800">{timeData.totalHoursThisMonth}h</p>
           <p className="text-xs text-indigo-600 mt-1">Learning time</p>
         </div>
 
@@ -83,7 +111,7 @@ export default function TimeActivitySection() {
             <TrendingUp className="w-5 h-5 text-purple-600" />
             <span className="text-sm text-purple-700">Daily Average</span>
           </div>
-          <p className="text-2xl font-bold text-purple-800">{data.averageDailyHours}h</p>
+          <p className="text-2xl font-bold text-purple-800">{timeData.averageDailyHours}h</p>
           <p className="text-xs text-purple-600 mt-1">Per day</p>
         </div>
 
@@ -93,8 +121,9 @@ export default function TimeActivitySection() {
             <span className="text-sm text-orange-700">Trend</span>
           </div>
           <p className="text-2xl font-bold text-orange-800">
-            {data.weeklyTrend[data.weeklyTrend.length - 1].hours >
-            data.weeklyTrend[data.weeklyTrend.length - 2]?.hours
+            {timeData.weeklyTrend.length >= 2 &&
+            timeData.weeklyTrend[timeData.weeklyTrend.length - 1].hours >
+              timeData.weeklyTrend[timeData.weeklyTrend.length - 2]?.hours
               ? "↑"
               : "→"}
           </p>
@@ -109,7 +138,7 @@ export default function TimeActivitySection() {
           <h3 className="text-sm font-semibold text-slate-700 mb-4">Weekly Learning Trend</h3>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.weeklyTrend}>
+              <LineChart data={timeData.weeklyTrend}>
                 <XAxis dataKey="week" stroke="#64748b" fontSize={12} />
                 <YAxis stroke="#64748b" fontSize={12} />
                 <Tooltip
@@ -138,7 +167,7 @@ export default function TimeActivitySection() {
           <h3 className="text-sm font-semibold text-slate-700 mb-4">Daily Activity (This Week)</h3>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.dailyActivity}>
+              <BarChart data={timeData.dailyActivity}>
                 <XAxis dataKey="day" stroke="#64748b" fontSize={12} />
                 <YAxis stroke="#64748b" fontSize={12} />
                 <Tooltip

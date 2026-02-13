@@ -461,7 +461,7 @@ class AIService {
           'PRIMARY CAPABILITIES:',
           '1. Team Progress Tracking: Provide at-a-glance status of team compliance training and course completion.',
           '2. Skill Gap Analysis: Identify high-potential employees and suggest specific upskilling modules based on performance.',
-          '3. Automated Nudges: Suggest intelligent nudges for employees who haven\'t started mandatory training.',
+          '3. Automated Nudges: Suggest intelligent nudges for employees who haven\'t started assigned training.',
           '4. Resource Allocation: Analyze engagement data to show where training budgets are most effective.',
           '',
           'GUARDRAILS:',
@@ -620,6 +620,122 @@ class AIService {
 
     const searchString = text.trim().replace(/^["']|["']$/g, '');
     return searchString || `${course} ${lesson} tutorial`.trim() || 'educational tutorial';
+  }
+
+  /**
+   * Skill Gap Analysis: Compare user goal + known skills against domain outcomes.
+   * Returns recommended path slug and skill gaps.
+   */
+  async analyzeSkillGap(goal, knownSkills = [], domainPaths = []) {
+    const goalStr = typeof goal === 'string' ? goal.trim() : '';
+    const skillsArr = Array.isArray(knownSkills) ? knownSkills : [];
+    const pathsArr = Array.isArray(domainPaths) ? domainPaths : [];
+
+    const prompt = [
+      'You are an LMS skill gap analyst. Given a user goal and their known skills, recommend the best matching learning path and identify skill gaps.',
+      '',
+      'USER GOAL: ' + (goalStr || 'Not specified'),
+      'KNOWN SKILLS: ' + (skillsArr.length > 0 ? skillsArr.join(', ') : 'None'),
+      '',
+      'AVAILABLE DOMAIN PATHS (slug: title):',
+      ...pathsArr.map((p) => `- ${p.slug}: ${p.title}`),
+      '',
+      'Role-based mapping rules:',
+      '- Pentester, cybersecurity, security → cloud-devops (or fullstack if cyber path not available)',
+      '- Build apps, web apps, full stack → fullstack',
+      '- UI/UX, design → uiux',
+      '- Data, analytics → data-analyst',
+      '- DevOps, cloud, infrastructure → cloud-devops',
+      '- QA, testing → qa',
+      '- Marketing → digital-marketing',
+      '',
+      'Respond with ONLY a valid JSON object, no markdown, no extra text:',
+      '{ "recommendedPathSlug": "fullstack", "skillGaps": ["skill1","skill2"], "suggestedStartPhase": "Phase 1: Foundations", "personalizedMessage": "One line of encouragement" }',
+    ].join('\n');
+
+    const msg = await this.client.messages.create({
+      model: DEFAULT_MODEL,
+      max_tokens: 512,
+      temperature: 0.3,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const text = Array.isArray(msg.content)
+      ? msg.content
+          .filter((c) => c && c.type === 'text')
+          .map((c) => c.text)
+          .join('\n')
+      : '';
+
+    try {
+      const json = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim());
+      return {
+        recommendedPathSlug: json.recommendedPathSlug || 'fullstack',
+        skillGaps: Array.isArray(json.skillGaps) ? json.skillGaps : [],
+        suggestedStartPhase: json.suggestedStartPhase || '',
+        personalizedMessage: json.personalizedMessage || '',
+      };
+    } catch {
+      return {
+        recommendedPathSlug: 'fullstack',
+        skillGaps: [],
+        suggestedStartPhase: 'Phase 1: Foundations',
+        personalizedMessage: 'Start with the foundations and build up your skills.',
+      };
+    }
+  }
+
+  /**
+   * Generate personalized learning path based on goal, skills, and optional quiz performance.
+   * If quizScore 100% on beginner: suggest skipping intermediate. If fail: suggest remedial.
+   */
+  async generateLearningPath(goal, knownSkills = [], pathStructure = {}, quizPerformance = {}) {
+    const quizInfo =
+      quizPerformance.lessonTitle && quizPerformance.percentage != null
+        ? `Last quiz: ${quizPerformance.lessonTitle} - ${quizPerformance.percentage}%`
+        : 'No recent quiz data';
+    const prompt = [
+      'You are an LMS path generator. Generate a personalized learning path.',
+      '',
+      'USER GOAL: ' + (typeof goal === 'string' ? goal.trim() : ''),
+      'KNOWN SKILLS: ' + (Array.isArray(knownSkills) ? knownSkills.join(', ') : ''),
+      'QUIZ PERFORMANCE: ' + quizInfo,
+      '',
+      'PATH STRUCTURE (phases and courses):',
+      JSON.stringify(pathStructure, null, 2).slice(0, 2000),
+      '',
+      'Rules:',
+      '- If quiz 100% on Beginner: suggest skipIntermediate: true for that topic',
+      '- If quiz < 60%: suggest remedialVideo or repeatModule',
+      '- Otherwise: follow standard path',
+      '',
+      'Respond with ONLY valid JSON:',
+      '{ "phases": [ { "id": "phase1", "name": "...", "courses": [ { "id": "...", "title": "...", "status": "required|skip|remedial", "reason": "..." } ] } ], "dynamicSuggestions": [ { "type": "skip|remedial", "courseId": "...", "message": "..." } ] }',
+    ].join('\n');
+
+    const msg = await this.client.messages.create({
+      model: DEFAULT_MODEL,
+      max_tokens: 2048,
+      temperature: 0.4,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const text = Array.isArray(msg.content)
+      ? msg.content
+          .filter((c) => c && c.type === 'text')
+          .map((c) => c.text)
+          .join('\n')
+      : '';
+
+    try {
+      const json = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim());
+      return {
+        phases: Array.isArray(json.phases) ? json.phases : [],
+        dynamicSuggestions: Array.isArray(json.dynamicSuggestions) ? json.dynamicSuggestions : [],
+      };
+    } catch {
+      return { phases: [], dynamicSuggestions: [] };
+    }
   }
 }
 

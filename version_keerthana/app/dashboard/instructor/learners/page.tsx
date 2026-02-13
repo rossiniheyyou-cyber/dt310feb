@@ -115,7 +115,7 @@ export default function InstructorLearnersPage() {
           <Link
             key={learner.id}
             href={`/dashboard/instructor/learners/${learner.id}`}
-            className="bg-white border border-slate-200 rounded-xl p-5 hover:border-teal-300 hover:shadow-sm transition group"
+            className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-5 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 group"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -163,7 +163,7 @@ export default function InstructorLearnersPage() {
 
       {/* Empty State */}
       {filteredLearners.length === 0 && (
-        <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-12 text-center shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <Users className="w-12 h-12 mx-auto text-slate-300 mb-4" />
           <p className="text-slate-600 font-medium">No learners match your filters</p>
           <p className="text-sm text-slate-500 mt-1">Try adjusting your search or filters</p>
@@ -171,7 +171,7 @@ export default function InstructorLearnersPage() {
       )}
 
       {/* Summary Stats */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <h2 className="font-semibold text-slate-800 mb-4">Learner Summary</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-3 rounded-lg bg-teal-50 border border-teal-100">

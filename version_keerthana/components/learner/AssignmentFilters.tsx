@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { Search, Filter } from "lucide-react";
 import { ROLES, ASSIGNMENT_TYPES } from "@/data/assignments";
 import type { Assignment } from "@/data/assignments";
-import { useCanonicalStore } from "@/context/CanonicalStoreContext";
+import { useLearnerAssignments } from "@/context/LearnerAssignmentsContext";
 
 const STATUSES = ["Assigned", "Due", "Submitted", "Reviewed", "Overdue"] as const;
 const SORT_OPTIONS = [
@@ -29,9 +29,8 @@ export default function AssignmentFilters({
 }: {
   onFilter?: (filtered: Assignment[]) => void;
 }) {
-  const { getAssignments } = useCanonicalStore();
-  const assignments = getAssignments();
-  const COURSES = useMemo(() => [...new Set(assignments.map((a) => a.course))].sort(), [assignments]);
+  const { assignments } = useLearnerAssignments();
+  const COURSES = useMemo(() => [...new Set(assignments.map((a) => a.course).filter(Boolean))].sort(), [assignments]);
 
   const [filters, setFilters] = useState<FilterState>({
     search: "",
@@ -75,13 +74,13 @@ export default function AssignmentFilters({
       case "due-asc":
         result.sort(
           (a, b) =>
-            new Date(a.dueDateISO).getTime() - new Date(b.dueDateISO).getTime()
+            (new Date(a.dueDateISO || 0).getTime()) - (new Date(b.dueDateISO || 0).getTime())
         );
         break;
       case "due-desc":
         result.sort(
           (a, b) =>
-            new Date(b.dueDateISO).getTime() - new Date(a.dueDateISO).getTime()
+            (new Date(b.dueDateISO || 0).getTime()) - (new Date(a.dueDateISO || 0).getTime())
         );
         break;
       case "priority":

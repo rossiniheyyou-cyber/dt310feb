@@ -59,7 +59,7 @@ export default function AdminReportsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <h2 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <BarChart3 className="w-5 h-5" />
             Learner progress summary
@@ -76,7 +76,7 @@ export default function AdminReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <h2 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <FileText className="w-5 h-5" />
             Course effectiveness
@@ -91,7 +91,7 @@ export default function AdminReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <h2 className="font-semibold text-slate-800 mb-4">Instructor performance</h2>
           <div className="space-y-3 text-sm">
             {instructors.map((u) => (
@@ -103,7 +103,7 @@ export default function AdminReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <h2 className="font-semibold text-slate-800 mb-4">Department-wise</h2>
           <div className="space-y-3 text-sm">
             {departments.map((d) => {

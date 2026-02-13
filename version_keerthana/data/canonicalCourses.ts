@@ -70,7 +70,6 @@ export type CanonicalCourse = {
   roles: string[];
   phase: string;
   courseOrder: number;
-  isMandatory: boolean;
   prerequisiteCourseIds: string[];
   modules: CanonicalModule[];
   instructor: { name: string; role: string };
@@ -94,7 +93,6 @@ const _canonicalCourses: CanonicalCourse[] = [
     roles: ["Full Stack Developer"],
     phase: "Foundation",
     courseOrder: 1,
-    isMandatory: true,
     prerequisiteCourseIds: [],
     instructor: { name: "Sarah Chen", role: "Senior Developer" },
     skills: ["Variables", "Loops", "Functions"],
@@ -144,7 +142,6 @@ const _canonicalCourses: CanonicalCourse[] = [
     roles: ["Full Stack Developer"],
     phase: "Advanced",
     courseOrder: 5,
-    isMandatory: true,
     prerequisiteCourseIds: ["prog-basics"],
     instructor: { name: "Sarah Chen", role: "Senior Developer" },
     skills: ["REST", "API Design"],
@@ -176,7 +173,6 @@ const _canonicalCourses: CanonicalCourse[] = [
     roles: ["Full Stack Developer"],
     phase: "Intermediate",
     courseOrder: 3,
-    isMandatory: true,
     prerequisiteCourseIds: ["web-fundamentals"],
     instructor: { name: "Emma Davis", role: "UI Engineer" },
     skills: ["HTML5", "CSS3", "Responsive Design"],
@@ -208,7 +204,6 @@ const _canonicalCourses: CanonicalCourse[] = [
     roles: ["Cloud & DevOps Engineer"],
     phase: "Intermediate",
     courseOrder: 6,
-    isMandatory: false,
     prerequisiteCourseIds: [],
     instructor: { name: "Instructor", role: "Tech Lead" },
     skills: ["Docker", "Containers"],

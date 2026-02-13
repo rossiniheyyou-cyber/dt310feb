@@ -83,7 +83,7 @@ export default function LearningPathPage() {
                     <Link
                       key={course.id}
                       href={`/dashboard/learner/courses/${path.slug}/${course.id}`}
-                      className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl hover:border-teal-200 hover:shadow-sm transition group"
+                      className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 group"
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0 text-teal-600 font-semibold text-sm">

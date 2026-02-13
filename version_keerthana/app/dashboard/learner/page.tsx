@@ -1,54 +1,36 @@
-import WelcomeCard from "@/components/learner/WelcomeCard";
-import ReadinessOverviewCard from "@/components/learner/ReadinessOverviewCard";
-import ContinueLearning from "@/components/learner/ContinueLearning";
-import UpcomingTasks from "@/components/learner/UpcomingTasks";
-import LearningPathStepper from "@/components/learner/LearningPathStepper";
-import AIMentorCard from "@/components/learner/AIMentorCard";
-import ProgressCharts from "@/components/learner/ProgressCharts";
-import LearningProgressSummary from "@/components/learner/LearningProgressSummary";
-import MandatoryCourses from "@/components/learner/MandatoryCourses";
-import SkillsOverview from "@/components/learner/SkillsOverview";
-import CertificatesSnapshot from "@/components/learner/CertificatesSnapshot";
-import RecentActivity from "@/components/learner/RecentActivity";
+"use client";
+
+import WelcomeHeader from "@/components/learner/dashboard/WelcomeHeader";
+import ReadinessScoreRing from "@/components/learner/dashboard/ReadinessScoreRing";
+import SkillDistributionRing from "@/components/learner/dashboard/SkillDistributionRing";
+import DailyStreakChart from "@/components/learner/dashboard/DailyStreakChart";
+import ContinueLearningSection from "@/components/learner/dashboard/ContinueLearningSection";
+import UpcomingTasksSection from "@/components/learner/dashboard/UpcomingTasksSection";
+import RecentActivitySection from "@/components/learner/dashboard/RecentActivitySection";
 
 export default function LearnerDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Welcome */}
-      <WelcomeCard />
+      <WelcomeHeader />
 
-      {/* Continue Learning (Top Priority) */}
-      <ContinueLearning />
+      {/* Continue Learning / Browse Courses - FIRST (before readiness) */}
+      <ContinueLearningSection />
 
-      {/* Readiness / Skill Readiness Score */}
-      <ReadinessOverviewCard />
-
-      {/* Learning Progress Summary - KPI Cards */}
-      <LearningProgressSummary />
-
-      {/* Tasks + Learning Path */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <UpcomingTasks />
-        <LearningPathStepper />
+      {/* Readiness + Daily Streak */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <ReadinessScoreRing />
+        <DailyStreakChart />
       </div>
 
-      {/* Assigned & Mandatory Courses */}
-      <MandatoryCourses />
+      {/* Skill Distribution - right below Readiness & Daily Streak */}
+      <SkillDistributionRing />
 
-      {/* Skills & Certificates */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SkillsOverview />
-        <CertificatesSnapshot />
-      </div>
-
-      {/* AI + Analytics + Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AIMentorCard />
-        <ProgressCharts />
-      </div>
+      {/* Upcoming Tasks */}
+      <UpcomingTasksSection />
 
       {/* Recent Learning Activity */}
-      <RecentActivity />
+      <RecentActivitySection />
     </div>
   );
 }

@@ -103,11 +103,6 @@ export default function CourseBreakdown() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="font-medium text-slate-800 truncate">{course.title}</h3>
-                  {course.isMandatory && (
-                    <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded font-medium">
-                      Mandatory
-                    </span>
-                  )}
                   {getStatusBadge(course.status)}
                 </div>
                 <p className="text-sm text-slate-500">Instructor: {course.instructor}</p>

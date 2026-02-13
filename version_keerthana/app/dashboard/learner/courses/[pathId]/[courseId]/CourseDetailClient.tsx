@@ -379,7 +379,7 @@ export function CourseDetailClient({ path, course }: Props) {
           {/* Quiz / Assignment placeholder */}
           {activeModule &&
             (activeModule.type === "quiz" || activeModule.type === "assignment") && (
-              <div className="mb-6 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+              <div className="mb-6 rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
                 <div className="flex items-center gap-3 mb-4">
                   {activeModule.type === "quiz" ? (
                     <HelpCircle size={24} className="text-teal-600" />

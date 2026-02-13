@@ -13,6 +13,12 @@ const recommendationRoutes = require('./recommendations');
 const quizRoutes = require('./quizzes');
 const progressRoutes = require('./progress');
 const enrollmentRoutes = require('./enrollments');
+const learningPathRoutes = require('./learningPath');
+const learningProfileRoutes = require('./learningProfile');
+const learnerDashboardRoutes = require('./learnerDashboard');
+const learnerProgressRoutes = require('./learnerProgress');
+const learnerCertificatesRoutes = require('./learnerCertificates');
+const learnerAssignmentsRoutes = require('./learnerAssignments');
 
 const router = express.Router();
 
@@ -114,6 +120,24 @@ router.use('/progress', progressRoutes);
 
 // Learner course enrollments
 router.use('/enrollments', enrollmentRoutes);
+
+// AI-generated learning path (skill gap, path generation)
+router.use('/learning-path', learningPathRoutes);
+
+// Learning target/profile (goal, target role, known skills)
+router.use('/learning-profile', learningProfileRoutes);
+
+// Learner dashboard (aggregated real-time data)
+router.use('/learner/dashboard', learnerDashboardRoutes);
+
+// Learner progress page (comprehensive real-time data)
+router.use('/learner/progress', learnerProgressRoutes);
+
+// Learner certificates (from CourseCompletion)
+router.use('/learner/certificates', learnerCertificatesRoutes);
+
+// Learner assignments & assessments (quizzes from enrolled courses)
+router.use('/learner/assignments-assessments', learnerAssignmentsRoutes);
 
 // Convenience nested endpoint for listing lessons by course
 // Documented as: /courses/{courseId}/lessons

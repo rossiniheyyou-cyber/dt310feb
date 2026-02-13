@@ -118,7 +118,7 @@ export default function InstructorSettingsPage() {
       </div>
 
       {activeSection === "profile" && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <h2 className="font-semibold text-slate-800 mb-4">Profile Information</h2>
           <div className="space-y-4">
             <div className="flex items-center gap-4 p-4 rounded-lg bg-slate-50 border border-slate-100">
@@ -228,7 +228,7 @@ export default function InstructorSettingsPage() {
       )}
 
       {activeSection === "courses" && (
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <div className="p-4 border-b border-slate-200">
             <h2 className="font-semibold text-slate-800">Assigned Courses</h2>
             <p className="text-sm text-slate-500 mt-1">Courses you are responsible for</p>
@@ -258,7 +258,7 @@ export default function InstructorSettingsPage() {
       )}
 
       {activeSection === "notifications" && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <h2 className="font-semibold text-slate-800 mb-4">Notification Preferences</h2>
           <p className="text-sm text-slate-500 mb-4">
             Choose how you want to be notified (email and/or in-app).
@@ -346,7 +346,7 @@ export default function InstructorSettingsPage() {
       )}
 
       {activeSection === "accessibility" && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <h2 className="font-semibold text-slate-800 mb-4">Accessibility Preferences</h2>
           <p className="text-sm text-slate-500 mb-4">
             Adjust how content is displayed. Theme and layout remain consistent.

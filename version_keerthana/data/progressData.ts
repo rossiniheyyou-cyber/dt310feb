@@ -9,7 +9,6 @@ export interface ProgressOverviewData {
   readinessStatus: ReadinessStatus;
   targetRole: string;
   learningPathProgress: number;
-  mandatoryTrainingCompletion: number;
   totalEnrolledCourses: number;
   completedCourses: number;
   totalAssignments: number;
@@ -65,7 +64,6 @@ export interface CourseProgressDetail {
   status: "completed" | "in_progress" | "not_started";
   lastAccessed: string;
   modules: ModuleProgress[];
-  isMandatory: boolean;
   dueDate?: string;
 }
 
@@ -144,7 +142,7 @@ export interface CertificateProgress {
 export interface ComplianceItem {
   id: string;
   title: string;
-  type: "mandatory" | "recommended";
+  type: "assigned" | "recommended";
   dueDate: string;
   status: "completed" | "in_progress" | "overdue" | "not_started";
   completedDate?: string;
@@ -167,7 +165,6 @@ export const progressOverview: ProgressOverviewData = {
   readinessStatus: "On Track",
   targetRole: "Full Stack Developer",
   learningPathProgress: 42,
-  mandatoryTrainingCompletion: 85,
   totalEnrolledCourses: 7,
   completedCourses: 3,
   totalAssignments: 15,
@@ -211,7 +208,6 @@ export const courseProgressDetails: CourseProgressDetail[] = [
     estimatedTime: "10h",
     status: "completed",
     lastAccessed: "2024-11-20",
-    isMandatory: true,
     modules: [
       { id: "m1", title: "Introduction to Programming", type: "video", duration: "15 min", status: "completed", watchProgress: 100, completedAt: "2024-11-01" },
       { id: "m2", title: "Variables and Data Types", type: "video", duration: "20 min", status: "completed", watchProgress: 100, completedAt: "2024-11-05" },
@@ -231,7 +227,6 @@ export const courseProgressDetails: CourseProgressDetail[] = [
     estimatedTime: "8h",
     status: "completed",
     lastAccessed: "2024-12-05",
-    isMandatory: true,
     modules: [
       { id: "m1", title: "How the Web Works", type: "video", duration: "20 min", status: "completed", watchProgress: 100 },
       { id: "m2", title: "HTTP Protocol Deep Dive", type: "video", duration: "25 min", status: "completed", watchProgress: 100 },
@@ -250,7 +245,6 @@ export const courseProgressDetails: CourseProgressDetail[] = [
     estimatedTime: "18h",
     status: "in_progress",
     lastAccessed: "2025-01-30",
-    isMandatory: true,
     dueDate: "2025-02-15",
     modules: [
       { id: "m1", title: "HTML Document Structure", type: "video", duration: "20 min", status: "completed", watchProgress: 100 },
@@ -277,7 +271,6 @@ export const courseProgressDetails: CourseProgressDetail[] = [
     estimatedTime: "24h",
     status: "in_progress",
     lastAccessed: "2025-01-28",
-    isMandatory: true,
     dueDate: "2025-03-01",
     modules: [
       { id: "m1", title: "ES6 Introduction", type: "video", duration: "25 min", status: "completed", watchProgress: 100 },
@@ -305,7 +298,6 @@ export const courseProgressDetails: CourseProgressDetail[] = [
     estimatedTime: "20h",
     status: "not_started",
     lastAccessed: "-",
-    isMandatory: false,
     modules: [],
   },
   {
@@ -319,7 +311,6 @@ export const courseProgressDetails: CourseProgressDetail[] = [
     estimatedTime: "16h",
     status: "in_progress",
     lastAccessed: "2025-01-30",
-    isMandatory: true,
     dueDate: "2025-02-28",
     modules: [
       { id: "m1", title: "REST Principles", type: "video", duration: "30 min", status: "completed", watchProgress: 100 },
@@ -346,7 +337,6 @@ export const courseProgressDetails: CourseProgressDetail[] = [
     estimatedTime: "2h",
     status: "completed",
     lastAccessed: "2024-10-20",
-    isMandatory: true,
     modules: [
       { id: "m1", title: "Data Security Basics", type: "video", duration: "30 min", status: "completed", watchProgress: 100 },
       { id: "m2", title: "Compliance Guidelines", type: "reading", duration: "20 min", status: "completed" },
@@ -505,13 +495,13 @@ export const certificateProgress: CertificateProgress[] = [
 ];
 
 export const complianceItems: ComplianceItem[] = [
-  { id: "c1", title: "Security & Compliance Training", type: "mandatory", dueDate: "2024-10-31", status: "completed", completedDate: "2024-10-20" },
-  { id: "c2", title: "Programming Basics", type: "mandatory", dueDate: "2024-12-15", status: "completed", completedDate: "2024-11-20" },
-  { id: "c3", title: "Web Fundamentals", type: "mandatory", dueDate: "2024-12-31", status: "completed", completedDate: "2024-12-05" },
-  { id: "c4", title: "HTML & CSS Fundamentals", type: "mandatory", dueDate: "2025-02-15", status: "in_progress" },
-  { id: "c5", title: "JavaScript (ES6+)", type: "mandatory", dueDate: "2025-03-01", status: "in_progress" },
-  { id: "c6", title: "REST API Development", type: "mandatory", dueDate: "2025-02-28", status: "in_progress" },
-  { id: "c7", title: "Data Privacy Refresher", type: "mandatory", dueDate: "2025-01-25", status: "overdue" },
+  { id: "c1", title: "Security & Compliance Training", type: "assigned", dueDate: "2024-10-31", status: "completed", completedDate: "2024-10-20" },
+  { id: "c2", title: "Programming Basics", type: "assigned", dueDate: "2024-12-15", status: "completed", completedDate: "2024-11-20" },
+  { id: "c3", title: "Web Fundamentals", type: "assigned", dueDate: "2024-12-31", status: "completed", completedDate: "2024-12-05" },
+  { id: "c4", title: "HTML & CSS Fundamentals", type: "assigned", dueDate: "2025-02-15", status: "in_progress" },
+  { id: "c5", title: "JavaScript (ES6+)", type: "assigned", dueDate: "2025-03-01", status: "in_progress" },
+  { id: "c6", title: "REST API Development", type: "assigned", dueDate: "2025-02-28", status: "in_progress" },
+  { id: "c7", title: "Data Privacy Refresher", type: "assigned", dueDate: "2025-01-25", status: "overdue" },
 ];
 
 export const nextSteps: NextStepItem[] = [

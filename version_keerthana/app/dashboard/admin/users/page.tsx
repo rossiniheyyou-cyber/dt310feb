@@ -149,7 +149,7 @@ export default function AdminUsersPage() {
         </select>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -265,7 +265,7 @@ export default function AdminUsersPage() {
       </div>
 
       {filtered.length === 0 && (
-        <div className="bg-white border border-slate-200 rounded-xl p-12 text-center text-slate-500">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-12 text-center text-slate-500 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           No users match your filters.
         </div>
       )}

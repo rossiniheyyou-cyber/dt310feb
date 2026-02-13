@@ -4,11 +4,10 @@ import { useState, useMemo, useEffect } from "react";
 import AssignmentCard from "./AssignmentCard";
 import AssignmentFilters from "./AssignmentFilters";
 import type { Assignment } from "@/data/assignments";
-import { useCanonicalStore } from "@/context/CanonicalStoreContext";
+import { useLearnerAssignments } from "@/context/LearnerAssignmentsContext";
 
 export default function AssignmentListing() {
-  const { state } = useCanonicalStore();
-  const assignments = state.assignments;
+  const { assignments } = useLearnerAssignments();
   const initialSorted = useMemo(
     () => [...assignments].sort((a, b) => new Date(a.dueDateISO).getTime() - new Date(b.dueDateISO).getTime()),
     [assignments]
@@ -17,10 +16,10 @@ export default function AssignmentListing() {
 
   useEffect(() => {
     const sorted = [...assignments].sort(
-      (a, b) => new Date(a.dueDateISO).getTime() - new Date(b.dueDateISO).getTime()
+      (a, b) => (new Date(a.dueDateISO || 0).getTime()) - (new Date(b.dueDateISO || 0).getTime())
     );
     setFiltered(sorted);
-  }, [state.assignments.length, state.courses.length, assignments]);
+  }, [assignments]);
 
   return (
     <div className="space-y-6">

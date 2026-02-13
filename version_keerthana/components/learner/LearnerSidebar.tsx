@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, Calendar, Bell, LayoutDashboard, TrendingUp, ClipboardList, BookOpen, Award, BookMarked, Library, HelpCircle } from "lucide-react";
+import { ChevronDown, Calendar, Bell, LayoutDashboard, ClipboardList, BookOpen, Award, BookMarked, Library, HelpCircle } from "lucide-react";
+import { useSidebar } from "@/context/SidebarContext";
+import SidebarToggleSwitch from "./SidebarToggleSwitch";
 
 const menuItems = [
   { label: "Dashboard", href: "/dashboard/learner", icon: LayoutDashboard },
-  { label: "Progress", href: "/dashboard/learner/progress", icon: TrendingUp },
   { label: "Assignments", href: "/dashboard/learner/assignments", icon: ClipboardList },
   { label: "Calendar", href: "/dashboard/learner/calendar", icon: Calendar },
   { label: "Notifications", href: "/dashboard/learner/notifications", icon: Bell },
@@ -25,15 +26,25 @@ export default function LearnerSidebar() {
   const pathname = usePathname();
   const isCoursesSection = pathname?.startsWith("/dashboard/learner/courses");
   const [coursesExpanded, setCoursesExpanded] = useState(isCoursesSection);
+  const { isOpen } = useSidebar();
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-teal-900 via-teal-900 to-teal-950 border-r border-teal-800/50 p-6 hidden md:block shadow-lg overflow-y-auto z-50">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white mb-1 tracking-tight">Learner</h2>
-        <div className="h-1 w-12 bg-gradient-to-r from-teal-400 to-teal-600 rounded-full"></div>
+    <aside
+      className={`fixed left-0 top-0 h-screen bg-gradient-to-b from-teal-900 via-teal-900 to-teal-950 border-r border-teal-800/50 shadow-lg overflow-y-auto z-50 transition-all duration-300 ease-in-out ${
+        isOpen ? "w-64 p-6" : "w-16 p-3"
+      }`}
+    >
+      <div className={`flex ${isOpen ? "items-start justify-between gap-2" : "items-center justify-center"} mb-8`}>
+        {isOpen && (
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1 tracking-tight">Learner</h2>
+            <div className="h-1 w-12 bg-gradient-to-r from-teal-400 to-teal-600 rounded-full"></div>
+          </div>
+        )}
+        <SidebarToggleSwitch />
       </div>
 
-      <nav className="space-y-1.5">
+      <nav className={`space-y-1.5 ${!isOpen ? "hidden" : ""}`}>
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (

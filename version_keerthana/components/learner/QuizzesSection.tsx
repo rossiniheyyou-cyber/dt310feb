@@ -3,13 +3,19 @@
 import Link from "next/link";
 import { Clock, HelpCircle, ChevronRight } from "lucide-react";
 import AssignmentStatusBadge from "./AssignmentStatusBadge";
-import { useCanonicalStore } from "@/context/CanonicalStoreContext";
+import { useLearnerAssignments } from "@/context/LearnerAssignmentsContext";
 
 export default function QuizzesSection() {
-  const { getAssignments } = useCanonicalStore();
-  const assignments = getAssignments();
-  const quizzes = assignments.filter((a) => a.type === "Quiz");
-  if (quizzes.length === 0) {
+  const { quizzes } = useLearnerAssignments();
+  const quizItems = quizzes.map((q) => ({
+    id: q.id,
+    title: q.title,
+    course: q.course,
+    courseId: q.courseId,
+    module: q.module,
+    status: q.status,
+  }));
+  if (quizItems.length === 0) {
     return (
       <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
         No quizzes available at the moment.
@@ -26,7 +32,7 @@ export default function QuizzesSection() {
         </p>
       </div>
       <div className="divide-y divide-slate-100">
-        {quizzes.map((q) => (
+        {quizItems.map((q) => (
           <Link
             key={q.id}
             href={`/dashboard/learner/quiz/${q.id}`}
@@ -42,14 +48,12 @@ export default function QuizzesSection() {
                   {q.course} • {q.module}
                 </p>
                 <div className="flex items-center gap-4 mt-2 text-sm text-slate-600">
-                  {q.timeLimitMinutes && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {q.timeLimitMinutes} min
-                    </span>
-                  )}
-                  {q.attemptLimit && (
-                    <span>Attempts: {q.attemptLimit}</span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    10 min
+                  </span>
+                  {quizzes.find((x) => x.id === q.id)?.attemptsCount != null && (
+                    <span>Attempts: {quizzes.find((x) => x.id === q.id)?.attemptsCount}</span>
                   )}
                 </div>
               </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Award,
   Download,
@@ -9,45 +9,57 @@ import {
   X,
   ExternalLink,
 } from "lucide-react";
-import { useLearnerProgress } from "@/context/LearnerProgressContext";
+import { getLearnerCertificates } from "@/lib/api/learnerCertificates";
+import type { Certificate } from "@/lib/api/learnerCertificates";
 import Link from "next/link";
 
-type CertificateWithMeta = {
-  pathSlug: string;
-  courseId: string;
-  courseTitle: string;
-  pathTitle: string;
-  earnedAt: string;
+type CertificateWithMeta = Certificate & {
   certificateId: string;
   status: "Issued" | "Revoked";
 };
 
 export default function LearnerCertificatesPage() {
-  const { state } = useLearnerProgress();
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [loading, setLoading] = useState(true);
   const [previewCert, setPreviewCert] = useState<CertificateWithMeta | null>(null);
-  const earned = (state.certificates ?? []).map((c) => ({
-    ...c,
-    certificateId: `CERT-${c.pathSlug.toUpperCase()}-${c.courseId}-${c.earnedAt.slice(0, 10).replace(/-/g, "")}`,
-    status: "Issued" as const,
-  }));
+
+  useEffect(() => {
+    getLearnerCertificates()
+      .then(setCertificates)
+      .catch(() => setCertificates([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const earned: CertificateWithMeta[] = certificates
+    .filter((c) => c.earnedAt)
+    .map((c) => ({
+      ...c,
+      earnedAt: c.earnedAt!,
+      certificateId: `CERT-${(c.pathSlug || "GEN").toUpperCase()}-${c.courseId}-${c.earnedAt!.slice(0, 10).replace(/-/g, "")}`,
+      status: "Issued" as const,
+    }));
 
   return (
     <div className="space-y-8 max-w-4xl">
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">Certificates</h1>
         <p className="text-slate-500 text-sm mt-1">
-          Certificates earned by completing role-based courses. All mandatory modules, assignments, and quizzes must be completed to earn a certificate.
+          Certificates earned by completing role-based courses. All modules, assignments, and quizzes must be completed to earn a certificate.
         </p>
       </div>
 
-      {earned.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
+      {loading ? (
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-12 text-center shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+          <div className="animate-pulse text-slate-500">Loading certificates...</div>
+        </div>
+      ) : earned.length === 0 ? (
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-12 text-center shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
             <Award className="w-8 h-8 text-slate-400" />
           </div>
           <h2 className="text-lg font-semibold text-slate-800">No certificates yet</h2>
           <p className="text-slate-600 mt-2 max-w-md mx-auto">
-            Complete all mandatory modules, pass required assignments and quizzes, and finish a course to earn your first certificate.
+            Complete all modules, pass required assignments and quizzes, and finish a course to earn your first certificate.
           </p>
           <div className="mt-6">
             <Link
@@ -67,7 +79,7 @@ export default function LearnerCertificatesPage() {
           {earned.map((cert) => (
             <div
               key={`${cert.pathSlug}-${cert.courseId}-${cert.earnedAt}`}
-              className="bg-white border border-slate-200 rounded-xl p-6 hover:border-teal-200 transition"
+              className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="w-12 h-12 rounded-lg bg-teal-50 flex items-center justify-center shrink-0">

@@ -1,19 +1,24 @@
 "use client";
 
 import { ClipboardList, CheckCircle, Clock, AlertCircle } from "lucide-react";
-import { useCanonicalStore } from "@/context/CanonicalStoreContext";
+import { useLearnerAssignments } from "@/context/LearnerAssignmentsContext";
 
 export default function AssignmentSummaryCards() {
-  const { getAssignments } = useCanonicalStore();
-  const assignments = getAssignments();
-  const total = assignments.length;
-  const completed = assignments.filter(
-    (a) => a.status === "Reviewed" || a.status === "Submitted"
-  ).length;
-  const pending = assignments.filter(
-    (a) => a.status === "Assigned" || a.status === "Due"
-  ).length;
-  const overdue = assignments.filter((a) => a.status === "Overdue").length;
+  const { assignments, summary } = useLearnerAssignments();
+  const total = summary
+    ? summary.totalAssignments + summary.totalQuizzes
+    : assignments.length;
+  const completed = summary
+    ? summary.completedAssignments + summary.completedQuizzes
+    : assignments.filter(
+        (a) => a.status === "Reviewed" || a.status === "Submitted"
+      ).length;
+  const pending = summary
+    ? summary.pendingAssignments + summary.pendingQuizzes
+    : assignments.filter(
+        (a) => a.status === "Assigned" || a.status === "Due"
+      ).length;
+  const overdue = summary?.overdueAssignments ?? assignments.filter((a) => a.status === "Overdue").length;
 
   const cards = [
     {

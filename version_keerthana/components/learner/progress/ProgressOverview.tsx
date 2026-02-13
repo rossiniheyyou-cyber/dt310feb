@@ -10,7 +10,7 @@ import {
   Flame,
   AlertTriangle,
 } from "lucide-react";
-import { progressOverview } from "@/data/progressData";
+import { useLearnerProgressPage } from "@/context/LearnerProgressPageContext";
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -84,35 +84,54 @@ function CircularProgress({
   );
 }
 
+const defaultOverview = {
+  overallCompletion: 0,
+  readinessStatus: "On Track" as const,
+  targetRole: "—",
+  learningPathProgress: 0,
+  totalEnrolledCourses: 0,
+  completedCourses: 0,
+  totalAssignments: 0,
+  completedAssignments: 0,
+  totalQuizzes: 0,
+  passedQuizzes: 0,
+  averageQuizScore: 0,
+  totalLearningHours: 0,
+  weeklyTarget: 10,
+  currentWeekHours: 0,
+  currentStreak: 0,
+};
+
 export default function ProgressOverview() {
-  const data = progressOverview;
+  const { data, loading } = useLearnerProgressPage();
+  const overview = data?.overview ?? defaultOverview;
 
   const metrics = [
     {
       icon: BookOpen,
       label: "Courses Completed",
-      value: `${data.completedCourses} / ${data.totalEnrolledCourses}`,
+      value: `${overview.completedCourses} / ${overview.totalEnrolledCourses}`,
       color: "text-teal-600",
       bgColor: "bg-teal-50",
     },
     {
       icon: CheckCircle2,
       label: "Assignments Done",
-      value: `${data.completedAssignments} / ${data.totalAssignments}`,
+      value: `${overview.completedAssignments} / ${overview.totalAssignments}`,
       color: "text-indigo-600",
       bgColor: "bg-indigo-50",
     },
     {
       icon: Award,
       label: "Avg Quiz Score",
-      value: `${data.averageQuizScore}%`,
+      value: `${overview.averageQuizScore}%`,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
     },
     {
       icon: Clock,
       label: "Total Learning Time",
-      value: `${data.totalLearningHours}h`,
+      value: `${overview.totalLearningHours}h`,
       color: "text-orange-600",
       bgColor: "bg-orange-50",
     },
@@ -124,13 +143,13 @@ export default function ProgressOverview() {
         <div>
           <h2 className="text-lg font-semibold text-slate-800">Progress Overview</h2>
           <p className="text-sm text-slate-500 mt-1">
-            Target Role: {data.targetRole}
+            Target Role: {overview.targetRole}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Flame className="w-5 h-5 text-orange-500" />
           <span className="text-sm font-medium text-slate-700">
-            {data.currentStreak} day streak
+            {overview.currentStreak} day streak
           </span>
         </div>
       </div>
@@ -138,44 +157,32 @@ export default function ProgressOverview() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Overall Completion */}
         <div className="flex items-center gap-6">
-          <CircularProgress percentage={data.overallCompletion} />
+          <CircularProgress percentage={overview.overallCompletion} />
           <div>
             <p className="text-sm text-slate-500 mb-1">Overall Completion</p>
-            <p className="text-3xl font-bold text-slate-800">{data.overallCompletion}%</p>
+            <p className="text-3xl font-bold text-slate-800">{overview.overallCompletion}%</p>
             <div
               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border mt-2 ${getStatusColor(
-                data.readinessStatus
+                overview.readinessStatus
               )}`}
             >
-              {getStatusIcon(data.readinessStatus)}
-              {data.readinessStatus}
+              {getStatusIcon(overview.readinessStatus)}
+              {overview.readinessStatus}
             </div>
           </div>
         </div>
 
-        {/* Learning Path & Mandatory Training */}
+        {/* Learning Path Progress */}
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-slate-600">Learning Path Progress</span>
-              <span className="text-sm font-medium text-slate-800">{data.learningPathProgress}%</span>
+              <span className="text-sm font-medium text-slate-800">{overview.learningPathProgress}%</span>
             </div>
             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-teal-500 rounded-full transition-all duration-500"
-                style={{ width: `${data.learningPathProgress}%` }}
-              />
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-600">Mandatory Training</span>
-              <span className="text-sm font-medium text-slate-800">{data.mandatoryTrainingCompletion}%</span>
-            </div>
-            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                style={{ width: `${data.mandatoryTrainingCompletion}%` }}
+                style={{ width: `${overview.learningPathProgress}%` }}
               />
             </div>
           </div>
@@ -183,13 +190,13 @@ export default function ProgressOverview() {
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-slate-600">Weekly Learning Goal</span>
               <span className="text-sm font-medium text-slate-800">
-                {data.currentWeekHours}h / {data.weeklyTarget}h
+                {overview.currentWeekHours}h / {overview.weeklyTarget}h
               </span>
             </div>
             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-indigo-500 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min((data.currentWeekHours / data.weeklyTarget) * 100, 100)}%` }}
+                style={{ width: `${Math.min((overview.currentWeekHours / overview.weeklyTarget) * 100 || 0, 100)}%` }}
               />
             </div>
           </div>

@@ -100,7 +100,7 @@ export default function MyCoursesPage() {
                 <Link
                   key={course.id}
                   href={`/dashboard/learner/courses/${pathSlug}/${course.id}`}
-                  className="card-flashy group relative bg-white border border-slate-200/60 rounded-2xl p-6 shadow-soft block"
+                  className="card-flashy group relative rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200/60 p-6 shadow-soft block"
                 >
                   {/* Progress indicator bar at top */}
                   {progress > 0 && (

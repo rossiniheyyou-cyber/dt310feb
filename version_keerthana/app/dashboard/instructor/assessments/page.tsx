@@ -409,7 +409,7 @@ export default function InstructorAssessmentsPage() {
       {/* Content by Tab */}
       {activeTab === "submissions" ? (
         /* Pending Reviews */
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <div className="p-4 border-b border-slate-200 bg-amber-50/50">
             <h2 className="font-semibold text-slate-800">Submissions Awaiting Review</h2>
             <p className="text-sm text-slate-500 mt-1">
@@ -459,7 +459,7 @@ export default function InstructorAssessmentsPage() {
         </div>
       ) : (
         /* All / Assignments / Quizzes - Assessment List */
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

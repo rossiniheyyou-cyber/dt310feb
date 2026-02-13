@@ -86,7 +86,6 @@ export const instructorCourses = [
     phase: "Foundations",
     enrolledCount: 42,
     completionRate: 78,
-    isMandatory: true,
     modulesCount: 5,
   },
   {
@@ -97,7 +96,6 @@ export const instructorCourses = [
     phase: "Backend Development",
     enrolledCount: 28,
     completionRate: 45,
-    isMandatory: true,
     modulesCount: 11,
   },
   {
@@ -108,7 +106,6 @@ export const instructorCourses = [
     phase: "Frontend Development",
     enrolledCount: 35,
     completionRate: 72,
-    isMandatory: true,
     modulesCount: 11,
   },
 ];

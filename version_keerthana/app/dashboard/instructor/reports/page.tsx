@@ -67,7 +67,7 @@ export default function InstructorReportsPage() {
       {/* Course Completion Report */}
       {reportType === "courses" && (
         <div className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-6">
+          <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
             <h2 className="font-semibold text-slate-800 mb-4">Course Completion Report</h2>
             <div className="h-64 mb-6">
               <ResponsiveContainer width="100%" height="100%">
@@ -113,7 +113,7 @@ export default function InstructorReportsPage() {
       {/* Assessment Performance Report */}
       {reportType === "assessments" && (
         <div className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-6">
+          <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
             <h2 className="font-semibold text-slate-800 mb-4">Assessment Performance Report</h2>
             <div className="h-64 mb-6">
               <ResponsiveContainer width="100%" height="100%">
@@ -159,7 +159,7 @@ export default function InstructorReportsPage() {
       {/* Skill Readiness Report */}
       {reportType === "skills" && (
         <div className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-6">
+          <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
             <h2 className="font-semibold text-slate-800 mb-4">Skill Readiness Summary</h2>
             <div className="h-64 mb-6">
               <ResponsiveContainer width="100%" height="100%">

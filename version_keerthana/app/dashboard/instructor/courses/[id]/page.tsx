@@ -343,7 +343,7 @@ export default function InstructorCourseDetailPage() {
       </Link>
 
       {/* Course Header */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-lg bg-slate-100 overflow-hidden shrink-0">
@@ -595,7 +595,7 @@ export default function InstructorCourseDetailPage() {
       )}
 
       {/* Module & Chapter Management */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div className="p-4 border-b border-slate-200 flex items-center justify-between">
           <div>
             <h2 className="font-semibold text-slate-800">Modules & Chapters</h2>

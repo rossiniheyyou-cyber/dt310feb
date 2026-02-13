@@ -1,0 +1,45 @@
+"use client";
+
+import Image from "next/image";
+
+interface RoleHeaderProps {
+  greeting: string;
+  subtitle: string;
+  loading?: boolean;
+}
+
+export default function RoleHeader({ greeting, subtitle, loading }: RoleHeaderProps) {
+  if (loading) {
+    return (
+      <div className="rounded-lg w-full bg-gradient-to-br from-teal-50 via-teal-100 to-cyan-100 p-2 animate-pulse overflow-hidden">
+        <div className="h-[100px] flex items-center gap-3">
+          <div className="h-[200px] w-[200px] sm:h-[280px] sm:w-[280px] bg-teal-200/50 rounded-full" />
+          <div className="h-6 bg-teal-200/50 rounded w-32" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg w-full overflow-hidden border border-teal-200/60 shadow-md transition-all duration-300 hover:shadow-lg group">
+      <div className="relative bg-gradient-to-br from-teal-50 via-cyan-50 to-teal-100 px-3 py-2 sm:px-4 sm:py-2.5 flex items-center gap-3 sm:gap-4">
+        <div className="relative w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
+          <Image
+            src="/images/welcome-hero.png"
+            alt=""
+            fill
+            className="object-contain"
+          />
+        </div>
+        <div className="min-w-0 py-0.5">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-teal-900 truncate">
+            {greeting}
+          </h1>
+          <p className="text-teal-800 font-semibold mt-1 text-sm sm:text-base truncate">
+            {subtitle}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

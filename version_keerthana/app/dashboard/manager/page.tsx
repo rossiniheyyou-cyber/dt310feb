@@ -148,7 +148,7 @@ export default function ManagerDashboardPage() {
             <Link
               key={label}
               href={href}
-              className="bg-white border border-slate-200 rounded-xl p-4 hover:border-teal-300 transition"
+              className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300"
             >
               <Icon className="w-6 h-6 text-slate-600 mb-2" />
               <p className="text-2xl font-semibold text-slate-800" suppressHydrationWarning>
@@ -160,7 +160,7 @@ export default function ManagerDashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
               <h2 className="font-semibold text-slate-800">Team progress</h2>
               <p className="text-sm text-slate-500 mt-0.5">Course completion by team learners</p>
@@ -194,7 +194,7 @@ export default function ManagerDashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
               <h2 className="font-semibold text-slate-800">Upcoming deadlines</h2>
               <p className="text-sm text-slate-500 mt-0.5">Assignments and quizzes for your team</p>
@@ -223,7 +223,7 @@ export default function ManagerDashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden lg:col-span-2">
+          <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 lg:col-span-2">
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
               <h2 className="font-semibold text-slate-800">Skill readiness overview</h2>
               <p className="text-sm text-slate-500 mt-0.5">Team learners by enrolled courses</p>

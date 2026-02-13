@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Calendar, ChevronRight } from "lucide-react";
 import AssignmentStatusBadge from "./AssignmentStatusBadge";
 import type { Assignment } from "@/data/assignments";
-import { useCanonicalStore } from "@/context/CanonicalStoreContext";
+import { useLearnerAssignments } from "@/context/LearnerAssignmentsContext";
 
 function groupByRoleAndCourse(items: Assignment[]) {
   const groups: Record<string, Assignment[]> = {};
@@ -15,17 +15,16 @@ function groupByRoleAndCourse(items: Assignment[]) {
   }
   for (const key of Object.keys(groups)) {
     groups[key].sort(
-      (a, b) => new Date(a.dueDateISO).getTime() - new Date(b.dueDateISO).getTime()
+      (a, b) => (new Date(a.dueDateISO || 0).getTime()) - (new Date(b.dueDateISO || 0).getTime())
     );
   }
   return groups;
 }
 
 export default function AssignmentTimeline() {
-  const { getAssignments } = useCanonicalStore();
-  const assignments = getAssignments();
+  const { assignments } = useLearnerAssignments();
   const sorted = [...assignments].sort(
-    (a, b) => new Date(a.dueDateISO).getTime() - new Date(b.dueDateISO).getTime()
+    (a, b) => (new Date(a.dueDateISO || 0).getTime()) - (new Date(b.dueDateISO || 0).getTime())
   );
   const groups = groupByRoleAndCourse(sorted);
 
@@ -61,7 +60,7 @@ export default function AssignmentTimeline() {
                     }`}
                   />
                   <Link
-                    href={`/dashboard/learner/assignments/${a.id}`}
+                    href={a.type === "Quiz" ? `/dashboard/learner/quiz/${a.id}` : `/dashboard/learner/assignments/${a.id}`}
                     className="block p-4 rounded-lg border border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 transition"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
@@ -88,7 +87,7 @@ export default function AssignmentTimeline() {
                     </div>
                     <div className="flex items-center gap-2 mt-2 text-sm text-slate-600">
                       <Calendar className="h-4 w-4" />
-                      <span>Due {a.dueDate}</span>
+                      <span>{a.dueDate ? `Due ${a.dueDate}` : (a.type === "Quiz" ? "Quiz" : "—")}</span>
                       <ChevronRight className="h-4 w-4 text-slate-400 ml-auto" />
                     </div>
                   </Link>

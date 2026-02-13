@@ -101,6 +101,14 @@ const UserEntity = new EntitySchema({
     },
 
     /**
+     * Learning target/profile: { goal, targetRole, knownSkills, completedOnboarding, recommendedPathSlug, skillGaps, personalizedMessage }
+     */
+    learningProfile: {
+      type: 'simple-json',
+      nullable: true,
+    },
+
+    /**
      * Password reset token (random string, stored hashed)
      */
     passwordResetToken: {

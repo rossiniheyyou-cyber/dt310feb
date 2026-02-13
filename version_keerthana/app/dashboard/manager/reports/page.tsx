@@ -59,7 +59,7 @@ export default function ManagerReportsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <h2 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <BarChart3 className="w-5 h-5" />
             Select report
@@ -84,7 +84,7 @@ export default function ManagerReportsPage() {
             ))}
           </div>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <h2 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <Download className="w-5 h-5" />
             Export format
@@ -123,7 +123,7 @@ export default function ManagerReportsPage() {
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
           <h2 className="font-semibold text-slate-800 flex items-center gap-2">
             <FileText className="w-5 h-5" />

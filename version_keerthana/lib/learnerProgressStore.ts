@@ -57,16 +57,6 @@ export type ActivityEntry = {
   courseTitle?: string;
 };
 
-export type MandatoryCourse = {
-  pathSlug: string;
-  courseId: string;
-  courseTitle: string;
-  pathTitle: string;
-  dueDate: string;
-  completed: boolean;
-  overdue?: boolean;
-};
-
 export type CertificateEntry = {
   pathSlug: string;
   courseId: string;
@@ -79,7 +69,6 @@ export type LearnerProgressState = {
   enrolledPathSlugs: string[];
   courseProgress: Record<string, CourseProgressEntry>;
   tasks: Task[];
-  mandatoryCourses: MandatoryCourse[];
   activityLog: ActivityEntry[];
   certificates: CertificateEntry[];
   totalLearningHours: number;
@@ -124,26 +113,6 @@ const defaultState: LearnerProgressState = {
       moduleId: "m4",
       dueDate: new Date(Date.now() + 86400000 * 5).toISOString(),
       status: "pending",
-    },
-  ],
-  mandatoryCourses: [
-    {
-      pathSlug: "fullstack",
-      courseId: "prog-basics",
-      courseTitle: "Programming Basics",
-      pathTitle: "Full Stack Developer",
-      dueDate: new Date(Date.now() + 86400000 * 14).toISOString(),
-      completed: false,
-      overdue: false,
-    },
-    {
-      pathSlug: "fullstack",
-      courseId: "web-fundamentals",
-      courseTitle: "Web Fundamentals",
-      pathTitle: "Full Stack Developer",
-      dueDate: new Date(Date.now() + 86400000 * 21).toISOString(),
-      completed: false,
-      overdue: false,
     },
   ],
   activityLog: [
@@ -328,12 +297,6 @@ export function recordModuleComplete(
         ]
       : prev.certificates;
 
-    const mandatoryCourses = prev.mandatoryCourses.map((mc) =>
-      mc.pathSlug === pathSlug && mc.courseId === courseId
-        ? { ...mc, completed: courseCompleted }
-        : mc
-    );
-
     const newSkills =
       courseCompleted && courseSkills.length > 0
         ? [
@@ -363,7 +326,6 @@ export function recordModuleComplete(
       },
       activityLog: [activity, ...prev.activityLog].slice(0, 50),
       certificates,
-      mandatoryCourses,
       totalLearningHours: prev.totalLearningHours + 0.25,
       skillsGained: newSkills,
     };
@@ -421,39 +383,30 @@ export function getMostRecentCourse(): {
 export function getReadinessScore(): {
   score: number;
   status: "On Track" | "Needs Attention" | "At Risk";
-  mandatoryComplete: number;
-  mandatoryTotal: number;
   courseCompletion: number;
 } {
   const s = getState();
-  const mandatoryComplete = s.mandatoryCourses.filter((mc) => mc.completed).length;
-  const mandatoryTotal = s.mandatoryCourses.length;
   const totalCourses = Object.values(s.courseProgress).length || 1;
   const completedCourses = Object.values(s.courseProgress).filter(
     (c) => c.courseCompleted
   ).length;
-  const courseCompletion = mandatoryTotal > 0 ? (mandatoryComplete / mandatoryTotal) * 100 : 0;
+  const courseCompletion = totalCourses > 0 ? (completedCourses / totalCourses) * 100 : 0;
   const pendingTasks = s.tasks.filter((t) => t.status === "pending").length;
-  const overdueMandatory = s.mandatoryCourses.filter(
-    (mc) => !mc.completed && mc.overdue
-  ).length;
 
   let score = Math.round(
     courseCompletion * 0.5 +
       (100 - Math.min(pendingTasks * 10, 50)) * 0.3 +
-      Math.max(0, 100 - overdueMandatory * 25) * 0.2
+      100 * 0.2
   );
   score = Math.min(100, Math.max(0, score));
 
   let status: "On Track" | "Needs Attention" | "At Risk" = "On Track";
-  if (score < 50 || overdueMandatory > 0) status = "At Risk";
+  if (score < 50) status = "At Risk";
   else if (score < 75 || pendingTasks > 2) status = "Needs Attention";
 
   return {
     score,
     status,
-    mandatoryComplete,
-    mandatoryTotal,
     courseCompletion: Math.round(courseCompletion),
   };
 }

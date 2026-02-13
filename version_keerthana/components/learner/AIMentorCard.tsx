@@ -13,7 +13,7 @@ export default function AIMentorCard() {
 
   const suggestion =
     status === "At Risk"
-      ? "Complete mandatory courses and assignments to improve your readiness."
+      ? "Complete courses and assignments to improve your readiness."
       : status === "Needs Attention"
       ? "Focus on pending assignments and quizzes to stay on track."
       : recent

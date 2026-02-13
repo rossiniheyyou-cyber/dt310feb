@@ -9,7 +9,7 @@ import {
   AlertTriangle,
   BookOpen,
 } from "lucide-react";
-import { skillProgress } from "@/data/progressData";
+import { useLearnerProgressPage } from "@/context/LearnerProgressPageContext";
 
 function getProficiencyColor(proficiency: string) {
   switch (proficiency) {
@@ -61,8 +61,9 @@ function getGapIndicator(current: number, target: number) {
 
 export default function SkillCompetencyProgress() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const { data } = useLearnerProgressPage();
+  const skillProgress = data?.skillProgress ?? [];
 
-  // Get unique categories
   const categories = ["all", ...Array.from(new Set(skillProgress.map((s) => s.category)))];
 
   const filteredSkills = skillProgress.filter((s) => {
@@ -73,10 +74,12 @@ export default function SkillCompetencyProgress() {
   // Calculate summary
   const skillsAtTarget = skillProgress.filter((s) => s.currentLevel >= s.targetLevel).length;
   const skillsWithGap = skillProgress.filter((s) => s.hasGap).length;
-  const averageProgress = Math.round(
-    skillProgress.reduce((sum, s) => sum + (s.currentLevel / s.targetLevel) * 100, 0) /
-      skillProgress.length
-  );
+  const averageProgress = skillProgress.length > 0
+    ? Math.round(
+        skillProgress.reduce((sum, s) => sum + (s.currentLevel / s.targetLevel) * 100, 0) /
+          skillProgress.length
+      )
+    : 0;
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-6">
@@ -118,7 +121,7 @@ export default function SkillCompetencyProgress() {
         <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-4 border border-emerald-200">
           <p className="text-sm text-emerald-700 mb-1">Skills at Target</p>
           <p className="text-3xl font-bold text-emerald-800">
-            {skillsAtTarget} / {skillProgress.length}
+            {skillsAtTarget} / {Math.max(skillProgress.length, 1)}
           </p>
           <p className="text-sm text-emerald-600 mt-1">Skills mastered</p>
         </div>
@@ -149,7 +152,12 @@ export default function SkillCompetencyProgress() {
 
       {/* Skills Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredSkills.map((skill) => {
+        {filteredSkills.length === 0 ? (
+          <p className="col-span-full text-sm text-slate-500 py-6">
+            Set your learning target to see your skills and gaps. Go to Settings or complete the onboarding.
+          </p>
+        ) : (
+        filteredSkills.map((skill) => {
           const profColors = getProficiencyColor(skill.proficiency);
           const progressPercentage = Math.min((skill.currentLevel / skill.targetLevel) * 100, 100);
 
@@ -208,7 +216,8 @@ export default function SkillCompetencyProgress() {
               )}
             </div>
           );
-        })}
+        })
+        )}
       </div>
 
       {/* Gap Alert */}

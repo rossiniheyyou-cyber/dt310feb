@@ -85,7 +85,7 @@ export default function AdminDashboardPage() {
             <Link
               key={label}
               href={href}
-              className="bg-white border border-slate-200 rounded-xl p-4 hover:border-slate-300 transition"
+              className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300"
             >
               <Icon className="w-6 h-6 text-slate-600 mb-2" />
               <p className="text-2xl font-semibold text-slate-800" suppressHydrationWarning>
@@ -99,7 +99,7 @@ export default function AdminDashboardPage() {
         {/* Widgets row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Course progress overview */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
             <h2 className="font-semibold text-slate-800">Course Progress Overview</h2>
             <p className="text-sm text-slate-500 mt-0.5">Published courses and completion rates</p>
@@ -134,7 +134,7 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Learner engagement (simplified) */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
             <h2 className="font-semibold text-slate-800">Learner Engagement</h2>
             <p className="text-sm text-slate-500 mt-0.5">Active learners and enrollment</p>
@@ -162,7 +162,7 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Instructor activity summary */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
             <h2 className="font-semibold text-slate-800">Instructor Activity</h2>
             <p className="text-sm text-slate-500 mt-0.5">Courses assigned to instructors</p>
@@ -196,7 +196,7 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Recent system activity */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
               <div className="flex items-center justify-between">
                 <div>

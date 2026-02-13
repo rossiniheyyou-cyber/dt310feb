@@ -63,7 +63,7 @@ export default function ManagerLearnerProfilePage() {
         Back to team learners
       </Link>
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-xl">
             {learner.name.charAt(0)}

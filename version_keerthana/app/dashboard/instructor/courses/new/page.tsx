@@ -51,7 +51,6 @@ export default function NewCoursePage() {
     roles: [] as string[],
     phase: "Foundation",
     courseOrder: 1,
-    isMandatory: false,
     prerequisiteCourseIds: [] as string[],
   });
 
@@ -156,7 +155,6 @@ export default function NewCoursePage() {
         roles: form.roles,
         phase: form.phase,
         courseOrder: form.courseOrder,
-        isMandatory: form.isMandatory,
         prerequisiteCourseIds: form.prerequisiteCourseIds,
         modules: [],
         instructor: { name: user?.name ?? "Instructor", role: "Tech Lead" },
@@ -309,17 +307,6 @@ export default function NewCoursePage() {
                 className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
-          </div>
-          <div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.isMandatory}
-                onChange={(e) => setForm({ ...form, isMandatory: e.target.checked })}
-                className="rounded border-slate-300 text-teal-600"
-              />
-              <span className="text-sm font-medium text-slate-700">Mandatory course</span>
-            </label>
           </div>
         </div>
 
