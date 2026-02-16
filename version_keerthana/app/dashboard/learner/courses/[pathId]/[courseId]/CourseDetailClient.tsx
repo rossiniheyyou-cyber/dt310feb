@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
@@ -17,17 +17,24 @@ import {
   HelpCircle,
   Sparkles,
   Loader2,
+  Upload,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import type { LearningPath, Course, Module } from "@/data/learningPaths";
+import { ASSESSMENT_PROBLEMS } from "@/data/canonicalCourses";
 import { useLearnerProgress } from "@/context/LearnerProgressContext";
 import AIMentorModal from "@/components/learner/AIMentorModal";
 import AiQuizModal from "@/components/learner/AiQuizModal";
 import TakeInstructorQuizModal from "@/components/learner/TakeInstructorQuizModal";
+import CourseModuleQuizModal from "@/components/learner/CourseModuleQuizModal";
+import { gradeLearnerAssignment } from "@/lib/api/aiAssignmentGrade";
 import { listQuizzesByCourse, type QuizSummary } from "@/lib/api/quizzes";
 import { getYoutubeKeyword, getYoutubeRecommendations } from "@/lib/api/recommendations";
 import type { YoutubeVideoSummary } from "@/lib/api/recommendations";
 import { getLessonsByCourse } from "@/lib/api/lessons";
 import { completeCourse, completeLesson } from "@/lib/api/progress";
+import { getLearningProfile, updateLearningProfile } from "@/lib/api/learningProfile";
 
 const ReactPlayer = dynamic(() => import("react-player"), { ssr: false });
 
@@ -37,17 +44,57 @@ const SAMPLE_VIDEO_URL =
 type Props = {
   path: LearningPath;
   course: Course & { backendId?: number; videoUrl?: string };
+  autoPlayFirst?: boolean;
 };
 
-export function CourseDetailClient({ path, course }: Props) {
-  const { recordCourseAccess, recordModuleComplete } = useLearnerProgress();
+export function CourseDetailClient({ path, course, autoPlayFirst = false }: Props) {
+  const { state, recordCourseAccess, recordModuleComplete } = useLearnerProgress();
   const [activeModule, setActiveModule] = useState<Module | null>(
     course.modules.find((m) => !m.locked) ?? course.modules[0] ?? null
   );
   const [modules, setModules] = useState(course.modules);
   const [completedModules, setCompletedModules] = useState<Set<string>>(
-    new Set(modules.filter((m) => m.completed).map((m) => m.id))
+    () => new Set(course.modules.filter((m) => m.completed).map((m) => m.id))
   );
+  const hasRestoredRef = useRef(false);
+  const [restoreComplete, setRestoreComplete] = useState(false);
+
+  // Restore from stored progress on mount (resume where left off) - useLayoutEffect so we don't overwrite store
+  useLayoutEffect(() => {
+    const key = `${path.slug}-${course.id}`;
+    const entry = state.courseProgress[key];
+    if (!entry) {
+      setRestoreComplete(true);
+      return;
+    }
+    if (hasRestoredRef.current) {
+      setRestoreComplete(true);
+      return;
+    }
+    hasRestoredRef.current = true;
+
+    const storedCompleted = new Set(entry.completedModuleIds ?? []);
+    setCompletedModules(storedCompleted);
+
+    // Update modules: mark completed, unlock next after completed
+    const baseModules = course.modules;
+    const updated = baseModules.map((m, idx) => {
+      const completed = storedCompleted.has(m.id);
+      const prevCompleted = idx > 0 ? storedCompleted.has(baseModules[idx - 1].id) : true;
+      const locked = idx > 0 && !prevCompleted;
+      return { ...m, completed, locked };
+    });
+    setModules(updated);
+
+    // Restore active module from last accessed
+    if (entry.currentModuleId) {
+      const idx = updated.findIndex((m) => m.id === entry.currentModuleId);
+      if (idx >= 0 && !updated[idx].locked) {
+        setActiveModule(updated[idx]);
+      }
+    }
+    setRestoreComplete(true);
+  }, [path.slug, course.id, course.modules, state.courseProgress]);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [showAIMentor, setShowAIMentor] = useState(false);
   const [showAiQuiz, setShowAiQuiz] = useState(false);
@@ -55,11 +102,17 @@ export function CourseDetailClient({ path, course }: Props) {
   const [quizzesLoading, setQuizzesLoading] = useState(false);
   const [takeQuizId, setTakeQuizId] = useState<number | null>(null);
   const [takeQuizTitle, setTakeQuizTitle] = useState("");
+  const [showModuleQuiz, setShowModuleQuiz] = useState(false);
+  const [assignmentFile, setAssignmentFile] = useState<File | null>(null);
+  const [assignmentGrading, setAssignmentGrading] = useState(false);
+  const [assignmentResult, setAssignmentResult] = useState<{ passed: boolean; feedback: string } | null>(null);
   const [playingVideoUrl, setPlayingVideoUrl] = useState<string | null>(null);
   const [supplementalVideos, setSupplementalVideos] = useState<YoutubeVideoSummary[]>([]);
   const [supplementalLoading, setSupplementalLoading] = useState(false);
   const [backendLessonIds, setBackendLessonIds] = useState<number[]>([]);
   const playerRef = useRef<typeof ReactPlayer | null>(null);
+  const hasAutoPlayedRef = useRef(false);
+  const [shouldAutoPlayNext, setShouldAutoPlayNext] = useState(false);
 
   // Default video: course-level video link from instructor, or sample
   const defaultVideoUrl = course.videoUrl?.trim() || SAMPLE_VIDEO_URL;
@@ -70,6 +123,7 @@ export function CourseDetailClient({ path, course }: Props) {
       : 0;
 
   const [courseCompletionSent, setCourseCompletionSent] = useState(false);
+  const [skillsSyncedToProfile, setSkillsSyncedToProfile] = useState(false);
 
   // When the learner completes the full course, notify instructor via backend (best-effort).
   useEffect(() => {
@@ -82,7 +136,33 @@ export function CourseDetailClient({ path, course }: Props) {
       .catch(() => {});
   }, [course.backendId, courseCompletionSent, currentProgress]);
 
+  // Update skill distribution when course is completed — add course skills to learning profile
   useEffect(() => {
+    if (currentProgress !== 100 || skillsSyncedToProfile || !course.skills?.length) return;
+    let cancelled = false;
+    getLearningProfile()
+      .then((profile) => {
+        if (cancelled) return;
+        const knownSet = new Set(profile.knownSkills ?? []);
+        const toAdd = course.skills.filter((s) => !knownSet.has(s));
+        if (toAdd.length === 0) {
+          setSkillsSyncedToProfile(true);
+          return;
+        }
+        return updateLearningProfile({
+          knownSkills: [...(profile.knownSkills ?? []), ...toAdd],
+          skillGaps: (profile.skillGaps ?? []).filter((s) => !toAdd.includes(s)),
+        });
+      })
+      .then(() => {
+        if (!cancelled) setSkillsSyncedToProfile(true);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [currentProgress, skillsSyncedToProfile, course.skills]);
+
+  useEffect(() => {
+    if (!restoreComplete) return;
     recordCourseAccess(
       path.slug,
       course.id,
@@ -93,7 +173,7 @@ export function CourseDetailClient({ path, course }: Props) {
       modules.length,
       Array.from(completedModules)
     );
-  }, [path.slug, path.title, course.id, course.title, activeModule?.id, activeModule?.title, modules.length, completedModules, recordCourseAccess]);
+  }, [restoreComplete, path.slug, path.title, course.id, course.title, activeModule?.id, activeModule?.title, modules.length, completedModules, recordCourseAccess]);
 
   // Reset playing video when switching module
   useEffect(() => {
@@ -187,6 +267,15 @@ export function CourseDetailClient({ path, course }: Props) {
           )
         );
       }
+      // Auto-advance to next module; auto-play if both current and next are videos
+      const isCurrentVideo = mod && (mod.type === "video" || !mod.type);
+      const isNextVideo = next && (next.type === "video" || !next.type);
+      if (isCurrentVideo && isNextVideo) {
+        setActiveModule(next);
+        setShouldAutoPlayNext(true);
+      } else if (next) {
+        setActiveModule(next);
+      }
     }
   };
 
@@ -204,7 +293,7 @@ export function CourseDetailClient({ path, course }: Props) {
       <div className="border-b border-slate-200 bg-slate-50/50 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-slate-600">
           <Link
-            href="/dashboard/learner/courses"
+            href="/dashboard/learner/courses/my-courses"
             className="hover:text-teal-600 transition"
           >
             My Courses
@@ -230,11 +319,16 @@ export function CourseDetailClient({ path, course }: Props) {
               <div className="relative bg-slate-900 rounded-xl overflow-hidden aspect-video">
                 <ReactPlayer
                   ref={playerRef}
-                  url={playingVideoUrl || defaultVideoUrl}
+                  url={playingVideoUrl || (activeModule as { videoUrl?: string }).videoUrl || defaultVideoUrl}
                   controls
                   width="100%"
                   height="100%"
                   playbackRate={playbackSpeed}
+                  playing={(autoPlayFirst && !hasAutoPlayedRef.current && !playingVideoUrl) || shouldAutoPlayNext}
+                  onPlay={() => {
+                    hasAutoPlayedRef.current = true;
+                    setShouldAutoPlayNext(false);
+                  }}
                   onEnded={() => markModuleComplete(activeModule.id)}
                   config={{
                     file: { attributes: { controlsList: "nodownload" } },
@@ -323,13 +417,18 @@ export function CourseDetailClient({ path, course }: Props) {
           {/* Ask AI Mentor + Take AI Quiz */}
           {activeModule && (
             <div className="mb-6 flex flex-wrap justify-end gap-2">
-              <button
-                onClick={() => setShowAiQuiz(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 text-white text-sm font-medium hover:bg-slate-700 transition shadow-sm"
-              >
-                <HelpCircle size={16} />
-                Take AI Quiz
-              </button>
+              <div className="group relative">
+                <button
+                  onClick={() => setShowAiQuiz(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 text-white text-sm font-medium hover:bg-slate-700 transition shadow-sm"
+                >
+                  <HelpCircle size={16} />
+                  Take AI Quiz
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs text-slate-600 bg-white border border-slate-200 rounded-lg shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 transition z-10 w-56 text-center">
+                  For self-assessment only. Does not affect readiness or skills. Logs are saved in AI Quiz page.
+                </div>
+              </div>
               <button
                 onClick={() => setShowAIMentor(true)}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition shadow-sm"
@@ -376,7 +475,7 @@ export function CourseDetailClient({ path, course }: Props) {
             </section>
           )}
 
-          {/* Quiz / Assignment placeholder */}
+          {/* Quiz / Assignment */}
           {activeModule &&
             (activeModule.type === "quiz" || activeModule.type === "assignment") && (
               <div className="mb-6 rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
@@ -392,24 +491,128 @@ export function CourseDetailClient({ path, course }: Props) {
                 </div>
                 <p className="text-slate-600 text-sm mb-4">
                   {activeModule.type === "quiz"
-                    ? "Complete the quiz to test your understanding."
-                    : "Submit your assignment to proceed."}
+                    ? "Complete the quiz to test your understanding. Quizzes are auto-graded by AI."
+                    : "Submit your assignment to proceed. Upload your work and AI will grade it. Assignments are auto-graded."}
                 </p>
-                <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 mb-4">
-                  <p className="text-sm text-slate-500">
-                    {activeModule.type === "quiz"
-                      ? "Quiz content would appear here. (UI only)"
-                      : "Assignment instructions would appear here. (UI only)"}
-                  </p>
-                </div>
-                <button
-                  onClick={() => markModuleComplete(activeModule.id)}
-                  className="px-4 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition"
-                >
-                  {activeModule.type === "quiz"
-                    ? "Submit Quiz"
-                    : "Submit Assignment"}
-                </button>
+                {activeModule.type === "assignment" && (
+                  (() => {
+                    const assignId =
+                      course.id === "html-css"
+                        ? "html-css-final"
+                        : course.id === "javascript-fundamentals"
+                          ? "js-fundamentals-final"
+                          : null;
+                    const problem = assignId ? ASSESSMENT_PROBLEMS[assignId] : null;
+                    if (!problem) {
+                      return (
+                        <p className="text-sm text-slate-500">No assessment is configured for this course yet.</p>
+                      );
+                    }
+                    return (
+                      <>
+                        <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 mb-4 prose prose-sm max-w-none">
+                          <pre className="whitespace-pre-wrap font-sans text-slate-700 text-sm">{problem}</pre>
+                        </div>
+                        {!assignmentResult ? (
+                          <>
+                            <label className="block mb-3">
+                              <span className="text-sm font-medium text-slate-700 mb-2 block">Upload your submission</span>
+                              <input
+                                type="file"
+                                accept=".html,.css,.js,.txt,.md"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  setAssignmentFile(f ?? null);
+                                  setAssignmentResult(null);
+                                }}
+                                className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
+                              />
+                            </label>
+                            {assignmentFile && (
+                              <p className="text-sm text-slate-500 mb-3">
+                                Selected: {assignmentFile.name}
+                              </p>
+                            )}
+                            <button
+                              onClick={async () => {
+                                if (!assignmentFile || !assignId || !problem) return;
+                                setAssignmentGrading(true);
+                                setAssignmentResult(null);
+                                try {
+                                  const text = await assignmentFile.text();
+                                  const res = await gradeLearnerAssignment({
+                                    assignmentTitle:
+                                      assignId === "js-fundamentals-final"
+                                        ? "Interactive JavaScript Project"
+                                        : "Personal Portfolio Page",
+                                    problemStatement: problem,
+                                    submissionContent: text,
+                                  });
+                                  setAssignmentResult(res);
+                                  if (res.passed) markModuleComplete(activeModule.id);
+                                } catch {
+                                  setAssignmentResult({
+                                    passed: false,
+                                    feedback: "Failed to grade. Please try again or check your submission format.",
+                                  });
+                                } finally {
+                                  setAssignmentGrading(false);
+                                }
+                              }}
+                              disabled={!assignmentFile || assignmentGrading}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 disabled:opacity-50 transition"
+                            >
+                              {assignmentGrading ? (
+                                <>
+                                  <Loader2 size={16} className="animate-spin" />
+                                  Grading…
+                                </>
+                              ) : (
+                                <>
+                                  <Upload size={16} />
+                                  Submit for grading
+                                </>
+                              )}
+                            </button>
+                          </>
+                        ) : (
+                          <div className={`p-4 rounded-lg border mb-4 ${assignmentResult.passed ? "bg-teal-50 border-teal-200" : "bg-amber-50 border-amber-200"}`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              {assignmentResult.passed ? (
+                                <CheckCircle size={20} className="text-teal-600" />
+                              ) : (
+                                <AlertCircle size={20} className="text-amber-600" />
+                              )}
+                              <span className={`font-medium ${assignmentResult.passed ? "text-teal-800" : "text-amber-800"}`}>
+                                {assignmentResult.passed ? "Passed" : "Not passed"}
+                              </span>
+                            </div>
+                            <p className="text-slate-700 text-sm whitespace-pre-wrap">{assignmentResult.feedback}</p>
+                            {!assignmentResult.passed && (
+                              <button
+                                onClick={() => {
+                                  setAssignmentResult(null);
+                                  setAssignmentFile(null);
+                                }}
+                                className="mt-3 text-sm font-medium text-teal-600 hover:text-teal-700"
+                              >
+                                Try again with a new submission
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()
+                )}
+                {activeModule.type === "quiz" && (
+                  <button
+                    onClick={() => setShowModuleQuiz(true)}
+                    className="px-4 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition"
+                  >
+                    Take Quiz
+                  </button>
+                )}
               </div>
             )}
 
@@ -499,7 +702,13 @@ export function CourseDetailClient({ path, course }: Props) {
               return (
                 <button
                   key={module.id}
-                  onClick={() => canAccess && setActiveModule(module)}
+                  onClick={() => {
+                    if (canAccess) {
+                      setActiveModule(module);
+                      setAssignmentResult(null);
+                      setAssignmentFile(null);
+                    }
+                  }}
                   disabled={!canAccess}
                   className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${
                     isActive
@@ -593,6 +802,27 @@ export function CourseDetailClient({ path, course }: Props) {
           onClose={() => { setTakeQuizId(null); setTakeQuizTitle(""); }}
           quizId={takeQuizId}
           quizTitle={takeQuizTitle}
+        />
+      )}
+
+      {/* Course module quiz */}
+      {activeModule?.type === "quiz" && (
+        <CourseModuleQuizModal
+          isOpen={showModuleQuiz}
+          onClose={() => setShowModuleQuiz(false)}
+          onPass={() => {
+            markModuleComplete(activeModule.id);
+            setShowModuleQuiz(false);
+          }}
+          courseTitle={course.title}
+          moduleTitle={activeModule.title.replace(/ - Quiz$/, "")}
+          topics={
+            activeModule.id.includes("m5") || activeModule.title.includes("HTML")
+              ? "HTML structure, tags, forms, inputs, semantic elements, CSS basics"
+              : activeModule.id.includes("m4") || activeModule.title.includes("JavaScript")
+                ? "JavaScript variables, functions, arrays, objects, DOM manipulation, events"
+                : activeModule.title.replace(/ - Quiz$/, "")
+          }
         />
       )}
     </div>

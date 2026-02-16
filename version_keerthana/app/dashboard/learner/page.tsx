@@ -7,6 +7,7 @@ import DailyStreakChart from "@/components/learner/dashboard/DailyStreakChart";
 import ContinueLearningSection from "@/components/learner/dashboard/ContinueLearningSection";
 import UpcomingTasksSection from "@/components/learner/dashboard/UpcomingTasksSection";
 import RecentActivitySection from "@/components/learner/dashboard/RecentActivitySection";
+import LearningStatsCards from "@/components/learner/dashboard/LearningStatsCards";
 
 export default function LearnerDashboardPage() {
   return (
@@ -14,17 +15,20 @@ export default function LearnerDashboardPage() {
       {/* Welcome */}
       <WelcomeHeader />
 
-      {/* Continue Learning / Browse Courses - FIRST (before readiness) */}
+      {/* Stats: enrolled, in progress, completed, hours, streak */}
+      <LearningStatsCards />
+
+      {/* Continue Learning / Browse Courses */}
       <ContinueLearningSection />
 
-      {/* Readiness + Daily Streak */}
+      {/* Readiness + Skill Distribution - side by side */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <ReadinessScoreRing />
-        <DailyStreakChart />
+        <SkillDistributionRing />
       </div>
 
-      {/* Skill Distribution - right below Readiness & Daily Streak */}
-      <SkillDistributionRing />
+      {/* Daily Streak - below */}
+      <DailyStreakChart />
 
       {/* Upcoming Tasks */}
       <UpcomingTasksSection />

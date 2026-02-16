@@ -1,6 +1,6 @@
 const Anthropic = require('@anthropic-ai/sdk');
 
-const DEFAULT_MODEL = process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022';
+const DEFAULT_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929';
 const DEFAULT_MAX_TOKENS = Number(process.env.ANTHROPIC_MAX_TOKENS || 1024);
 const DEFAULT_ANTHROPIC_VERSION = process.env.ANTHROPIC_VERSION || '2023-06-01';
 
@@ -360,6 +360,67 @@ class AIService {
       : '';
 
     return text.trim() || 'Provide specific praise and one or two concrete improvements when you review this submission.';
+  }
+
+  /**
+   * Grade a learner's assignment submission and return pass/fail + feedback.
+   * Used for course assessments (e.g. final project). Evaluates against the problem statement.
+   * @param {string} assignmentTitle - Title of the assignment
+   * @param {string} problemStatement - Full problem statement / rubric
+   * @param {string} submissionContent - What the learner submitted (file content, etc.)
+   * @returns {Promise<{passed: boolean, feedback: string}>}
+   */
+  async gradeLearnerAssignment(assignmentTitle, problemStatement, submissionContent) {
+    const title = typeof assignmentTitle === 'string' ? assignmentTitle.trim() : 'Assignment';
+    const problem = typeof problemStatement === 'string' ? problemStatement.trim() : '';
+    const submission = typeof submissionContent === 'string' ? submissionContent.trim() : '(No submission content provided)';
+
+    const prompt = [
+      'You are the DigitalT3 AI grading assistant. Grade a learner\'s assignment submission against the problem statement.',
+      'You MUST respond with ONLY a valid JSON object (no markdown, no code fences, no commentary).',
+      'The JSON MUST have exactly two keys:',
+      '- passed: boolean (true if the submission meets the requirements, false otherwise)',
+      '- feedback: string (2-5 sentences: what they did well, what to improve, and whether they passed)',
+      'Be fair but strict. Pass only if the key requirements are met. For HTML/CSS: check for semantic HTML, forms, styling, layout as specified.',
+      '',
+      'Assignment title: ' + title,
+      problem ? '\nProblem statement / requirements:\n' + problem.slice(0, 2000) : '',
+      '\nSubmission content:\n' + submission.slice(0, 4000),
+    ].join('\n');
+
+    const msg = await this.client.messages.create({
+      model: DEFAULT_MODEL,
+      max_tokens: 600,
+      temperature: 0.3,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const text = Array.isArray(msg.content)
+      ? msg.content
+          .filter((c) => c && c.type === 'text')
+          .map((c) => c.text)
+          .join('\n')
+      : '';
+
+    let parsed;
+    try {
+      const start = text.indexOf('{');
+      const end = text.lastIndexOf('}');
+      if (start >= 0 && end > start) {
+        parsed = JSON.parse(text.slice(start, end + 1));
+      } else {
+        parsed = JSON.parse(text);
+      }
+    } catch {
+      return {
+        passed: false,
+        feedback: text.trim() || 'Unable to grade. Please ensure your submission includes the required content and try again.',
+      };
+    }
+
+    const passed = Boolean(parsed.passed);
+    const feedback = typeof parsed.feedback === 'string' ? parsed.feedback.trim() : (passed ? 'Your submission meets the requirements.' : 'Your submission needs improvement. Please review the requirements and try again.');
+    return { passed, feedback };
   }
 
   // PUBLIC_INTERFACE

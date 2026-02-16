@@ -43,9 +43,17 @@ export async function listQuizzesByCourse(courseId: number): Promise<QuizListRes
   return response.data;
 }
 
+export interface CreateQuizPayload {
+  title: string;
+  generateWithAi?: boolean;
+  topicsPrompt?: string;
+  fileContent?: string;
+  questions?: Array<{ questionText: string; options: string[]; correctAnswerIndex: number }>;
+}
+
 export async function createQuiz(
   courseId: number,
-  payload: { title: string; generateWithAi?: boolean; questions?: Array<{ questionText: string; options: string[]; correctAnswerIndex: number }> }
+  payload: CreateQuizPayload
 ): Promise<{ id: number; courseId: number; title: string; createdAt: string }> {
   const response = await apiClient.post(`/courses/${courseId}/quizzes`, payload);
   return response.data;

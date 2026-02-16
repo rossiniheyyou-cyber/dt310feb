@@ -26,20 +26,31 @@ function toVideoSummary(item) {
 /**
  * POST /recommendations/youtube-keyword
  * Body: { courseTitle, lessonName }
- * Returns: { searchString } — single YouTube search query from Claude
+ * Returns: { searchString } — single YouTube search query from Claude, or fallback if AI unavailable
  */
 router.post('/youtube-keyword', auth, async (req, res) => {
   try {
     const { courseTitle, lessonName } = req.body || {};
-    const ai = createAIService();
-    const searchString = await ai.generateYoutubeSearchKeyword(courseTitle, lessonName);
-    return res.json({ searchString });
-  } catch (err) {
-    if (err.code === 'ANTHROPIC_API_KEY_MISSING' || err.code === 'AI_INPUT_INVALID') {
-      return res.status(503).json({ message: 'AI service not available for keyword generation.' });
+    const fallbackSearch = [courseTitle, lessonName].filter(Boolean).join(' ') || 'programming tutorial';
+    try {
+      const ai = createAIService();
+      const searchString = await ai.generateYoutubeSearchKeyword(courseTitle, lessonName);
+      return res.json({ searchString });
+    } catch (aiErr) {
+      // AI/auth errors: use fallback so supplemental videos still work
+      const isAuthErr = aiErr?.status === 401 ||
+        (typeof aiErr?.message === 'string' && aiErr.message.toLowerCase().includes('invalid x-api-key')) ||
+        (aiErr?.error?.type === 'authentication_error');
+      if (aiErr?.code === 'ANTHROPIC_API_KEY_MISSING' || isAuthErr || aiErr?.code === 'AI_INPUT_INVALID') {
+        return res.json({ searchString: fallbackSearch });
+      }
+      throw aiErr;
     }
-    console.error('youtube-keyword error:', err);
-    return res.status(500).json({ message: err.message || 'Failed to generate search keyword.' });
+  } catch (err) {
+    const { courseTitle, lessonName } = req.body || {};
+    const fallbackSearch = [courseTitle, lessonName].filter(Boolean).join(' ') || 'programming tutorial';
+    console.error('youtube-keyword error:', err?.message || err);
+    return res.json({ searchString: fallbackSearch });
   }
 });
 

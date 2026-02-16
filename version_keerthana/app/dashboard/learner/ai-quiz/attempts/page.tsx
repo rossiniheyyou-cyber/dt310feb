@@ -41,7 +41,7 @@ export default function AiQuizAttemptsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50/30">
       <div className="max-w-4xl mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
@@ -63,7 +63,7 @@ export default function AiQuizAttemptsPage() {
             {error}
           </div>
         ) : attempts.length === 0 ? (
-          <div className="p-8 rounded-xl border border-slate-200 bg-slate-50 text-center text-slate-600">
+          <div className="p-8 rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 text-center text-slate-600 shadow-sm">
             <p className="mb-2">You haven&apos;t taken any AI quizzes yet.</p>
             <p className="text-sm">
               Go to a course and use &quot;Take AI Quiz&quot; to get started. All attempts will appear here.
@@ -80,7 +80,7 @@ export default function AiQuizAttemptsPage() {
             {attempts.map((a) => (
               <li
                 key={a.id}
-                className="flex items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 hover:border-teal-200 hover:bg-teal-50/30 transition"
+                className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300"
               >
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-slate-900 truncate">

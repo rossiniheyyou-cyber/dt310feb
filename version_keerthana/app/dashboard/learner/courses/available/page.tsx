@@ -6,13 +6,13 @@ import { ChevronRight, BookOpen, Clock, Sparkles } from "lucide-react";
 import { useCanonicalStore } from "@/context/CanonicalStoreContext";
 import { syncCoursesFromBackend } from "@/lib/canonicalStore";
 import { learningPaths } from "@/data/learningPaths";
-import { enrollInCourseApi, getMyEnrollments } from "@/lib/api/enrollments";
+import { getMyEnrollments } from "@/lib/api/enrollments";
+import { isLocallyEnrolled } from "@/lib/localEnrollments";
 
 export default function AvailableCoursesPage() {
   const { getPublishedCoursesForPath, refresh } = useCanonicalStore();
   const [mounted, setMounted] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [enrollingCourseId, setEnrollingCourseId] = useState<string | null>(null);
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(new Set());
 
   // Sync courses from backend on mount
@@ -56,28 +56,8 @@ export default function AvailableCoursesPage() {
     );
   }
 
-  const handleEnroll = async (e: React.MouseEvent, courseId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const numericId = Number(courseId);
-    if (!Number.isFinite(numericId)) {
-      alert("This course cannot be enrolled from backend yet.");
-      return;
-    }
-    try {
-      setEnrollingCourseId(courseId);
-      await enrollInCourseApi(courseId);
-      setEnrolledCourseIds((prev) => new Set([...Array.from(prev), courseId]));
-      alert("Enrolled successfully! This course is now in My Courses.");
-    } catch (err: any) {
-      alert(err?.response?.data?.message || "Failed to enroll. Please try again.");
-    } finally {
-      setEnrollingCourseId(null);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50/30">
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
@@ -92,12 +72,12 @@ export default function AvailableCoursesPage() {
             )}
           </div>
           <p className="text-slate-600 text-sm">
-            Browse all available courses. Enroll in a course to start learning.
+            Browse available courses. Click on a course to view details, outcomes, and total hours before enrolling.
           </p>
         </div>
 
         {allCourses.length === 0 ? (
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-12 text-center">
+          <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-12 text-center shadow-sm">
             <BookOpen className="w-16 h-16 text-slate-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-slate-800 mb-2">
               No courses available
@@ -124,7 +104,7 @@ export default function AvailableCoursesPage() {
                     <Link
                       key={course.id}
                       href={`/dashboard/learner/courses/${path.slug}/${course.id}`}
-                      className="card-flashy group relative rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200/60 p-6 shadow-soft block"
+                      className="group relative rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 block"
                     >
                       {/* Gradient overlay on hover */}
                       <div className="absolute inset-0 bg-gradient-to-br from-teal-50/0 to-teal-50/0 group-hover:from-teal-50/50 group-hover:to-transparent transition-all duration-300 pointer-events-none"></div>
@@ -163,22 +143,13 @@ export default function AvailableCoursesPage() {
 
                         <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                           <span className="inline-flex items-center gap-2 text-sm font-semibold text-teal-600 group-hover:text-teal-700 transition-colors">
-                            View Course
+                            View Course Details
                             <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform duration-200" />
                           </span>
-                          {enrolledCourseIds.has(String(course.id)) ? (
+                          {(enrolledCourseIds.has(String(course.id)) || (course.backendId != null && enrolledCourseIds.has(String(course.backendId))) || isLocallyEnrolled(course.id)) && (
                             <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
                               Enrolled
                             </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={(e) => handleEnroll(e, String(course.id))}
-                              disabled={enrollingCourseId === String(course.id)}
-                              className="text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-60 px-3 py-1.5 rounded-md"
-                            >
-                              {enrollingCourseId === String(course.id) ? "Enrolling..." : "Enroll"}
-                            </button>
                           )}
                         </div>
                       </div>

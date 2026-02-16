@@ -54,14 +54,14 @@ export default function AiQuizPage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50/30 flex items-center justify-center">
         <Loader2 size={24} className="animate-spin text-teal-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50/30">
       <div className="max-w-4xl mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
@@ -73,7 +73,7 @@ export default function AiQuizPage() {
           </p>
         </div>
 
-        <section className="mb-8 p-6 rounded-xl border border-slate-200 bg-slate-50/50">
+        <section className="mb-8 p-6 rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <BookOpen size={20} className="text-teal-600" />
             Start practice quiz
@@ -83,7 +83,7 @@ export default function AiQuizPage() {
           </p>
 
           {uniqueCourses.length === 0 ? (
-            <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+            <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-800 text-sm">
               You need to be enrolled in at least one course to take an AI quiz.{" "}
               <Link href="/dashboard/learner/courses/available" className="font-medium underline">
                 Browse courses
@@ -146,7 +146,7 @@ export default function AiQuizPage() {
         <section>
           <Link
             href="/dashboard/learner/ai-quiz/attempts"
-            className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 hover:border-teal-200"
+            className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 text-slate-700 font-medium shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300"
           >
             <Award size={20} />
             View past attempts

@@ -7,27 +7,34 @@ import { useLearnerProgress } from "@/context/LearnerProgressContext";
 import { useCanonicalStore } from "@/context/CanonicalStoreContext";
 import { syncCoursesFromBackend } from "@/lib/canonicalStore";
 import { getMyEnrollments } from "@/lib/api/enrollments";
+import { isLocallyEnrolled } from "@/lib/localEnrollments";
 import { learningPaths } from "@/data/learningPaths";
 
 export default function MyCoursesPage() {
   const { state, refresh } = useLearnerProgress();
-  const { getPublishedCoursesForPath } = useCanonicalStore();
+  const { getPublishedCoursesForPath, refresh: refreshCanonical } = useCanonicalStore();
   const [mounted, setMounted] = useState(false);
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(new Set());
 
   // Sync courses from backend on mount
   useEffect(() => {
     setMounted(true);
-    syncCoursesFromBackend().catch(console.error);
+    syncCoursesFromBackend()
+      .then(() => refreshCanonical())
+      .catch(console.error);
     getMyEnrollments()
-      .then((res) => setEnrolledCourseIds(new Set((res.enrollments || []).map((e) => String(e.courseId))))
-      )
+      .then((res) => setEnrolledCourseIds(new Set((res.enrollments || []).map((e) => String(e.courseId)))))
       .catch(() => setEnrolledCourseIds(new Set()));
-  }, []);
+  }, [refreshCanonical]);
 
-  // Get courses the learner is enrolled in (from DB enrollments table)
+  const isEnrolledIn = (course: { id: string; backendId?: string | number }) =>
+    enrolledCourseIds.has(String(course.id)) ||
+    (course.backendId != null && enrolledCourseIds.has(String(course.backendId))) ||
+    isLocallyEnrolled(course.id);
+
+  // Get courses the learner is enrolled in (backend + local enrollments)
   const recentCourses = learningPaths.flatMap((path) => {
-    const courses = getPublishedCoursesForPath(path.slug).filter((c) => enrolledCourseIds.has(String(c.id)));
+    const courses = getPublishedCoursesForPath(path.slug).filter((c) => isEnrolledIn(c));
     return courses.map((course) => ({
       course,
       pathSlug: path.slug,
@@ -55,14 +62,14 @@ export default function MyCoursesPage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50/30 flex items-center justify-center">
         <p className="text-slate-600">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50/30">
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-slate-900 mb-2">
@@ -74,7 +81,7 @@ export default function MyCoursesPage() {
         </div>
 
         {recentCourses.length === 0 ? (
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-12 text-center">
+          <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-12 text-center shadow-sm">
             <BookOpen className="w-16 h-16 text-slate-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-slate-800 mb-2">
               No courses yet
@@ -100,7 +107,7 @@ export default function MyCoursesPage() {
                 <Link
                   key={course.id}
                   href={`/dashboard/learner/courses/${pathSlug}/${course.id}`}
-                  className="card-flashy group relative rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200/60 p-6 shadow-soft block"
+                  className="group relative rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 block"
                 >
                   {/* Progress indicator bar at top */}
                   {progress > 0 && (

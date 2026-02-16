@@ -1,6 +1,7 @@
 "use client";
 
 import { useLearnerDashboard } from "@/context/LearnerDashboardContext";
+import { useLearnerProgress } from "@/context/LearnerProgressContext";
 import { DASHBOARD_CHART_PALETTE } from "@/lib/tealPalette";
 
 const SIZE = 140;
@@ -10,7 +11,11 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 export default function ReadinessScoreRing() {
   const { data, loading } = useLearnerDashboard();
-  const score = Math.min(100, Math.max(0, data?.readinessScore ?? 0));
+  const { state, getReadinessScore } = useLearnerProgress();
+  void state; // subscribe for realtime updates
+  const localScore = getReadinessScore().score;
+  const apiScore = data?.readinessScore ?? 0;
+  const score = Math.min(100, Math.max(0, Object.keys(state.courseProgress).length > 0 ? localScore : apiScore));
   const offset = CIRCUMFERENCE - (score / 100) * CIRCUMFERENCE;
 
   if (loading) {

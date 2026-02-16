@@ -16,6 +16,8 @@ import {
   recordModuleComplete,
   getMostRecentCourse,
   getReadinessScore,
+  getDashboardStats,
+  getDailyActivityForChart,
   type LearnerProgressState,
 } from "@/lib/learnerProgressStore";
 
@@ -27,6 +29,8 @@ const LearnerProgressContext = createContext<{
   recordModuleComplete: typeof recordModuleComplete;
   getMostRecentCourse: typeof getMostRecentCourse;
   getReadinessScore: typeof getReadinessScore;
+  getDashboardStats: typeof getDashboardStats;
+  getDailyActivityForChart: typeof getDailyActivityForChart;
 } | null>(null);
 
 export function LearnerProgressProvider({
@@ -55,6 +59,8 @@ export function LearnerProgressProvider({
         recordModuleComplete,
         getMostRecentCourse,
         getReadinessScore,
+        getDashboardStats,
+        getDailyActivityForChart,
       }}
     >
       {children}

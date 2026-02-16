@@ -1,13 +1,14 @@
 "use client";
 
-import { useLearnerProgressPage } from "@/context/LearnerProgressPageContext";
+import { useLearnerProgress } from "@/context/LearnerProgressContext";
 import { DASHBOARD_CHART_PALETTE } from "@/lib/tealPalette";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from "recharts";
 
 export default function DailyStreakChart() {
-  const { data } = useLearnerProgressPage();
-  const dailyActivity = data?.timeActivity?.dailyActivity ?? [];
-  const totalHours = data?.timeActivity?.totalHoursThisWeek ?? 0;
+  const { state, getDailyActivityForChart } = useLearnerProgress();
+  void state; // subscribe for realtime updates
+  const { dailyActivity, totalHoursThisWeek } = getDailyActivityForChart();
+  const totalHours = totalHoursThisWeek;
 
   const chartData = dailyActivity.map((d, i) => ({
     day: d.day,

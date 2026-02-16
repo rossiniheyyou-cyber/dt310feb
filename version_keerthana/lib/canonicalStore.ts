@@ -5,7 +5,7 @@
  * Now syncs with backend API to ensure instructor-created courses appear for learners.
  */
 
-import { getInitialCanonicalCourses } from "@/data/canonicalCourses";
+import { getInitialCanonicalCourses, getCourseById as getCourseFromData } from "@/data/canonicalCourses";
 import type { CanonicalCourse, CanonicalModule } from "@/data/canonicalCourses";
 import { assignments as initialAssignments } from "@/data/assignments";
 import type { Assignment } from "@/data/assignments";
@@ -117,12 +117,29 @@ function loadState(): CanonicalStoreState {
   if (typeof window === "undefined") return loadInitial();
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
+    const initial = loadInitial();
     if (stored) {
       const parsed = JSON.parse(stored) as CanonicalStoreState;
+      const storedCourses = parsed.courses ?? initial.courses;
+      const mergedCourses = storedCourses.map((c) => {
+        const fromData = getCourseFromData(c.id);
+        if (fromData?.modules?.length) {
+          if (!c.modules || c.modules.length === 0) {
+            return { ...c, ...fromData, backendId: c.backendId ?? fromData.backendId };
+          }
+          if (c.id === "html-css" || c.id === "javascript-fundamentals") {
+            return { ...c, ...fromData, backendId: c.backendId ?? fromData.backendId };
+          }
+        }
+        return c;
+      });
+      const storedIds = new Set(mergedCourses.map((c) => String(c.id)));
+      const toAdd = initial.courses.filter((c) => !storedIds.has(String(c.id)) && c.modules?.length);
+      const courses = [...mergedCourses, ...toAdd];
       return {
-        courses: parsed.courses ?? loadInitial().courses,
-        assignments: parsed.assignments ?? loadInitial().assignments,
-        quizConfigs: parsed.quizConfigs ?? loadInitial().quizConfigs,
+        courses,
+        assignments: parsed.assignments ?? initial.assignments,
+        quizConfigs: parsed.quizConfigs ?? initial.quizConfigs,
       };
     }
   } catch (_) {}
@@ -231,13 +248,28 @@ export function getCoursesForInstructor(): CanonicalCourse[] {
 }
 
 export function getPublishedCoursesForPath(pathSlug: string): CanonicalCourse[] {
-  return getCanonicalState().courses.filter(
+  const filtered = getCanonicalState().courses.filter(
     (c) => c.pathSlug === pathSlug && c.status === "published"
   );
+  // Full Stack Developer path: show HTML & CSS and JavaScript Fundamentals
+  if (pathSlug === "fullstack") {
+    const htmlCss = getCourseById("html-css");
+    const jsFund = getCourseById("javascript-fundamentals");
+    const courses: CanonicalCourse[] = [htmlCss, jsFund].filter((c): c is CanonicalCourse => !!c);
+    return courses.length ? courses : filtered.filter((c) => c.id === "html-css" || c.id === "javascript-fundamentals");
+  }
+  return filtered;
 }
 
 export function getCourseById(id: string): CanonicalCourse | undefined {
-  return getCanonicalState().courses.find((c) => c.id === id);
+  const fromStore = getCanonicalState().courses.find((c) => c.id === id);
+  if (id === "html-css" || id === "javascript-fundamentals") {
+    const fromData = getCourseFromData(id);
+    if (fromData?.modules?.length) {
+      return { ...fromData, backendId: fromStore?.backendId ?? fromData.backendId };
+    }
+  }
+  return fromStore;
 }
 
 export function addCourse(course: CanonicalCourse) {

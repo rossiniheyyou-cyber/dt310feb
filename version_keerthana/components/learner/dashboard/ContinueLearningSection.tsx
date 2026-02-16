@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useLearnerDashboard } from "@/context/LearnerDashboardContext";
+import { useLearnerProgress } from "@/context/LearnerProgressContext";
 
 export default function ContinueLearningSection() {
-  const { data, loading } = useLearnerDashboard();
-  const recent = data?.mostRecentCourse;
-  const completed = data?.completedCourses ?? 0;
-  const inProgress = Math.max(0, (data?.totalEnrolled ?? 0) - completed);
+  const { state, getMostRecentCourse, getDashboardStats } = useLearnerProgress();
+  void state; // subscribe to changes for realtime updates
+  const recent = getMostRecentCourse();
+  const stats = getDashboardStats();
+  const completed = stats.completed;
+  const inProgress = stats.inProgress;
+  const loading = false;
 
   if (loading) {
     return (
@@ -17,7 +20,7 @@ export default function ContinueLearningSection() {
     );
   }
 
-  if (!recent) {
+  if (!recent || !recent.pathSlug || !recent.courseId) {
     return (
       <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/30 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

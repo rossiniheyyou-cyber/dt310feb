@@ -9,18 +9,18 @@ import SidebarToggleSwitch from "./SidebarToggleSwitch";
 
 const menuItems = [
   { label: "Dashboard", href: "/dashboard/learner", icon: LayoutDashboard },
-  { label: "Assignments", href: "/dashboard/learner/assignments", icon: ClipboardList },
-  { label: "Calendar", href: "/dashboard/learner/calendar", icon: Calendar },
   { label: "Notifications", href: "/dashboard/learner/notifications", icon: Bell },
+  { label: "Calendar", href: "/dashboard/learner/calendar", icon: Calendar },
+  { label: "Assignments", href: "/dashboard/learner/assignments", icon: ClipboardList },
   { label: "AI Quiz", href: "/dashboard/learner/ai-quiz", icon: HelpCircle },
 ];
-
-const certificatesItem = { label: "Certificates", href: "/dashboard/learner/certificates", icon: Award };
 
 const coursesSubItems = [
   { label: "My Courses", href: "/dashboard/learner/courses/my-courses", icon: BookMarked },
   { label: "Available Courses", href: "/dashboard/learner/courses/available", icon: Library },
 ];
+
+const certificatesItem = { label: "Certificates", href: "/dashboard/learner/certificates", icon: Award };
 
 export default function LearnerSidebar() {
   const pathname = usePathname();
@@ -45,28 +45,23 @@ export default function LearnerSidebar() {
       </div>
 
       <nav className={`space-y-1.5 ${!isOpen ? "hidden" : ""}`}>
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 ${
-                pathname === item.href
-                  ? "bg-gradient-to-r from-teal-600 to-teal-700 text-white shadow-md shadow-teal-900/30"
-                  : "text-teal-100 hover:bg-teal-800/60 hover:text-white"
-              }`}
-            >
-              {Icon && <Icon className="w-5 h-5 shrink-0" />}
-              <span className={`font-medium ${pathname === item.href ? 'text-white' : 'text-teal-200'}`}>
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
+        {/* Dashboard - First */}
+        <Link
+          href="/dashboard/learner"
+          className={`group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 ${
+            pathname === "/dashboard/learner"
+              ? "bg-gradient-to-r from-teal-600 to-teal-700 text-white shadow-md shadow-teal-900/30"
+              : "text-teal-100 hover:bg-teal-800/60 hover:text-white"
+          }`}
+        >
+          <LayoutDashboard className="w-5 h-5 shrink-0" />
+          <span className={`font-medium ${pathname === "/dashboard/learner" ? 'text-white' : 'text-teal-200'}`}>
+            Dashboard
+          </span>
+        </Link>
 
-        {/* Courses Section with Sub-items */}
-        <div className="pt-2">
+        {/* Courses - Second */}
+        <div className="pt-0">
           <button
             onClick={() => setCoursesExpanded(!coursesExpanded)}
             className={`w-full flex items-center justify-between gap-3 rounded-xl px-4 py-3 transition-all duration-200 ${
@@ -106,6 +101,27 @@ export default function LearnerSidebar() {
             </div>
           )}
         </div>
+
+        {/* Notifications, Calendar, Assignments, AI Quiz */}
+        {menuItems.filter((item) => item.label !== "Dashboard").map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 ${
+                pathname === item.href
+                  ? "bg-gradient-to-r from-teal-600 to-teal-700 text-white shadow-md shadow-teal-900/30"
+                  : "text-teal-100 hover:bg-teal-800/60 hover:text-white"
+              }`}
+            >
+              {Icon && <Icon className="w-5 h-5 shrink-0" />}
+              <span className={`font-medium ${pathname === item.href ? 'text-white' : 'text-teal-200'}`}>
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
 
         {/* Certificates - Last Item */}
         <div className="pt-2">

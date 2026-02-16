@@ -1,9 +1,11 @@
 /**
  * Learner progress store - frontend only, persists to localStorage.
  * Used by Dashboard and My Courses to reflect dynamic learning state.
+ * All dashboard stats (enrolled, in progress, completed) are course-based, not video/module-based.
  */
 
 import { getCurrentUser } from "@/lib/currentUser";
+import { getLocalEnrolledCourseIds } from "@/lib/localEnrollments";
 
 const STORAGE_KEY_BASE = "digitalt3-learner-progress";
 
@@ -77,71 +79,12 @@ export type LearnerProgressState = {
 
 const defaultState: LearnerProgressState = {
   enrolledPathSlugs: ["fullstack"],
-  courseProgress: {
-    "fullstack-prog-basics": {
-      pathSlug: "fullstack",
-      courseId: "prog-basics",
-      courseTitle: "Programming Basics",
-      pathTitle: "Full Stack Developer",
-      completedModuleIds: ["m1", "m2"],
-      currentModuleId: "m3",
-      currentModuleTitle: "Control Flow",
-      lastAccessedAt: new Date().toISOString(),
-      courseCompleted: false,
-      totalModules: 5,
-    },
-  },
-  tasks: [
-    {
-      id: "t1",
-      type: "quiz",
-      title: "Module Quiz",
-      courseTitle: "Programming Basics",
-      pathSlug: "fullstack",
-      courseId: "prog-basics",
-      moduleId: "m5",
-      dueDate: new Date(Date.now() + 86400000 * 2).toISOString(),
-      status: "pending",
-    },
-    {
-      id: "t2",
-      type: "assignment",
-      title: "Practice Assignment",
-      courseTitle: "Programming Basics",
-      pathSlug: "fullstack",
-      courseId: "prog-basics",
-      moduleId: "m4",
-      dueDate: new Date(Date.now() + 86400000 * 5).toISOString(),
-      status: "pending",
-    },
-  ],
-  activityLog: [
-    {
-      id: "a1",
-      type: "module_completed",
-      title: "Variables and Data Types",
-      subtitle: "Programming Basics",
-      timestamp: new Date(Date.now() - 3600000).toISOString(),
-      pathSlug: "fullstack",
-      courseId: "prog-basics",
-      pathTitle: "Full Stack Developer",
-      courseTitle: "Programming Basics",
-    },
-    {
-      id: "a2",
-      type: "course_accessed",
-      title: "Programming Basics",
-      subtitle: "Full Stack Developer",
-      timestamp: new Date(Date.now() - 7200000).toISOString(),
-      pathSlug: "fullstack",
-      courseId: "prog-basics",
-      pathTitle: "Full Stack Developer",
-      courseTitle: "Programming Basics",
-    },
-  ],
+  courseProgress: {},
+  tasks: [],
+  activityLog: [],
   certificates: [],
-  totalLearningHours: 4.5,
-  skillsGained: ["Variables", "Loops", "Data Types"],
+  totalLearningHours: 0,
+  skillsGained: [],
 };
 
 function loadState(): LearnerProgressState {
@@ -377,6 +320,68 @@ export function getMostRecentCourse(): {
     progress,
     totalModules: mostRecent.totalModules,
     completedCount: mostRecent.completedModuleIds.length,
+  };
+}
+
+/** Dashboard stats from local progress - all counts are course-based, not video-based */
+export function getDashboardStats() {
+  const s = getState();
+  const entries = Object.values(s.courseProgress);
+  const progressCourseIds = new Set(entries.map((e) => e.courseId));
+  const localEnrolledIds = getLocalEnrolledCourseIds();
+  const allCourseIds = new Set([...progressCourseIds, ...localEnrolledIds]);
+  const enrolled = allCourseIds.size;
+  const completed = entries.filter((e) => e.courseCompleted).length;
+  const inProgress = Math.max(0, enrolled - completed);
+  const totalHours = s.totalLearningHours ?? 0;
+
+  // Streak: consecutive days with activity (from activityLog)
+  const activityDates = new Set<string>();
+  for (const a of s.activityLog ?? []) {
+    if (a.timestamp) {
+      const d = new Date(a.timestamp);
+      activityDates.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+    }
+  }
+  const today = new Date();
+  let streak = 0;
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (activityDates.has(key)) streak++;
+    else if (i > 0) break;
+  }
+
+  return { enrolled, inProgress, completed, totalHours, streak };
+}
+
+/** Daily activity for chart - hours per day this week */
+export function getDailyActivityForChart() {
+  const s = getState();
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const now = new Date();
+  const dayOfWeek = (now.getDay() + 6) % 7; // Mon=0
+  const weekStart = new Date(now);
+  weekStart.setDate(weekStart.getDate() - dayOfWeek);
+  weekStart.setHours(0, 0, 0, 0);
+
+  const dayHours: Record<number, number> = {};
+  for (let i = 0; i < 7; i++) dayHours[i] = 0;
+
+  for (const a of s.activityLog ?? []) {
+    if (!a.timestamp) continue;
+    const d = new Date(a.timestamp);
+    const diff = Math.floor((d.getTime() - weekStart.getTime()) / (24 * 60 * 60 * 1000));
+    if (diff >= 0 && diff < 7) {
+      dayHours[diff] = (dayHours[diff] ?? 0) + 0.25; // ~15 min per activity
+    }
+  }
+
+  const totalThisWeek = Object.values(dayHours).reduce((s, h) => s + h, 0);
+  return {
+    dailyActivity: days.map((day, i) => ({ day, hours: Math.round((dayHours[i] ?? 0) * 100) / 100 })),
+    totalHoursThisWeek: Math.round(totalThisWeek * 100) / 100,
   };
 }
 

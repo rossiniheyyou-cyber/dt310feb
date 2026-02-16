@@ -193,6 +193,9 @@ export default function InstructorCourseDetailPage() {
   const [quizzesLoading, setQuizzesLoading] = useState(false);
   const [showCreateQuiz, setShowCreateQuiz] = useState(false);
   const [newQuizTitle, setNewQuizTitle] = useState("");
+  const [topicsPrompt, setTopicsPrompt] = useState("");
+  const [fileContent, setFileContent] = useState("");
+  const [fileUploading, setFileUploading] = useState(false);
   const [createQuizLoading, setCreateQuizLoading] = useState(false);
   const [createQuizError, setCreateQuizError] = useState("");
   const [syncLoading, setSyncLoading] = useState(false);
@@ -535,33 +538,69 @@ export default function InstructorCourseDetailPage() {
       {/* Create Quiz Modal (Generate with AI) */}
       {showCreateQuiz && backendId != null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-slate-900">Create quiz</h3>
-              <button onClick={() => setShowCreateQuiz(false)} className="p-2 rounded-lg hover:bg-slate-100">
+              <h3 className="text-lg font-semibold text-slate-900">Create quiz with AI</h3>
+              <button onClick={() => { setShowCreateQuiz(false); setNewQuizTitle(""); setTopicsPrompt(""); setFileContent(""); setCreateQuizError(""); }} className="p-2 rounded-lg hover:bg-slate-100">
                 <X size={20} />
               </button>
             </div>
             <p className="text-sm text-slate-600 mb-4">
-              AI will generate 10 MCQs based on this course. All quizzes are auto-graded.
+              AI will generate 10 MCQs. Optionally specify topics to cover or upload a document. All quizzes are auto-graded.
             </p>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Quiz title</label>
-              <input
-                type="text"
-                value={newQuizTitle}
-                onChange={(e) => setNewQuizTitle(e.target.value)}
-                placeholder="e.g. Week 1 Check"
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Quiz title</label>
+                <input
+                  type="text"
+                  value={newQuizTitle}
+                  onChange={(e) => setNewQuizTitle(e.target.value)}
+                  placeholder="e.g. HTML & CSS Fundamentals Quiz"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Topics to cover (optional)</label>
+                <textarea
+                  value={topicsPrompt}
+                  onChange={(e) => setTopicsPrompt(e.target.value)}
+                  placeholder="e.g. HTML semantics, CSS selectors, forms, layout and positioning"
+                  rows={2}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Or upload document (optional)</label>
+                <input
+                  type="file"
+                  accept=".txt,.md"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setFileUploading(true);
+                    try {
+                      const text = await file.text();
+                      setFileContent(text.slice(0, 15000));
+                    } catch {
+                      setCreateQuizError("Could not read file. Use .txt or .md files.");
+                    } finally {
+                      setFileUploading(false);
+                      e.target.value = "";
+                    }
+                  }}
+                  className="w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-teal-50 file:text-teal-700 file:font-medium hover:file:bg-teal-100"
+                />
+                {fileUploading && <span className="text-xs text-slate-500 mt-1">Reading file…</span>}
+                {fileContent && <span className="text-xs text-emerald-600 mt-1 block">Document loaded ({fileContent.length} chars)</span>}
+              </div>
             </div>
             {createQuizError && (
-              <p className="text-sm text-red-600 mb-4">{createQuizError}</p>
+              <p className="text-sm text-red-600 mt-4">{createQuizError}</p>
             )}
-            <div className="flex gap-3">
+            <div className="flex gap-3 mt-6">
               <button
                 type="button"
-                onClick={() => setShowCreateQuiz(false)}
+                onClick={() => { setShowCreateQuiz(false); setNewQuizTitle(""); setTopicsPrompt(""); setFileContent(""); setCreateQuizError(""); }}
                 className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
               >
                 Cancel
@@ -573,9 +612,16 @@ export default function InstructorCourseDetailPage() {
                   setCreateQuizError("");
                   setCreateQuizLoading(true);
                   try {
-                    await createQuiz(backendId, { title: newQuizTitle.trim(), generateWithAi: true });
+                    await createQuiz(backendId, {
+                      title: newQuizTitle.trim(),
+                      generateWithAi: true,
+                      ...(topicsPrompt.trim() && { topicsPrompt: topicsPrompt.trim() }),
+                      ...(fileContent.trim() && { fileContent: fileContent.trim() }),
+                    });
                     setShowCreateQuiz(false);
                     setNewQuizTitle("");
+                    setTopicsPrompt("");
+                    setFileContent("");
                     listQuizzesByCourse(backendId).then((res) => setQuizzes(res.quizzes || []));
                   } catch (err: unknown) {
                     const e = err as { response?: { data?: { message?: string } } };

@@ -95,11 +95,13 @@ router.post('/courses/:courseId/quizzes', auth, async (req, res, next) => {
     if (!isValidId(courseId)) {
       return res.status(400).json({ message: 'Invalid course ID' });
     }
-    const { title, questions, generateWithAi } = req.body || {};
+    const { title, questions, generateWithAi, topicsPrompt, fileContent } = req.body || {};
     const titleStr = typeof title === 'string' ? title.trim() : '';
     if (!titleStr) {
       return res.status(400).json({ message: 'title is required' });
     }
+    const topicsStr = typeof topicsPrompt === 'string' ? topicsPrompt.trim() : '';
+    const fileStr = typeof fileContent === 'string' ? fileContent.trim() : '';
 
     const ds = getDataSource();
     if (!ds || !ds.isInitialized) {
@@ -123,7 +125,10 @@ router.post('/courses/:courseId/quizzes', auth, async (req, res, next) => {
     if (generateWithAi) {
       try {
         const ai = createAIService();
-        questionsSnapshot = await ai.generateLearnerQuiz(course.title || titleStr, 'medium');
+        const topic = [course.title || titleStr];
+        if (topicsStr) topic.push('Topics to cover:', topicsStr);
+        if (fileStr) topic.push('Content from uploaded document:', fileStr);
+        questionsSnapshot = await ai.generateLearnerQuiz(topic.join('\n\n'), 'medium');
       } catch (aiErr) {
         console.error('AI quiz generate error:', aiErr?.message);
         return res.status(503).json({

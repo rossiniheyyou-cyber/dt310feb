@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useLearnerProgressPage } from "@/context/LearnerProgressPageContext";
+import { useLearnerProgress } from "@/context/LearnerProgressContext";
 import { BookOpen, HelpCircle } from "lucide-react";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -22,8 +22,8 @@ function formatTimestamp(isoDate: string): string {
 }
 
 export default function RecentActivitySection() {
-  const { data } = useLearnerProgressPage();
-  const activities = data?.recentActivity ?? [];
+  const { state } = useLearnerProgress();
+  const activities = state.activityLog ?? [];
 
   return (
     <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
