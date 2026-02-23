@@ -488,8 +488,7 @@ router.get(
 
 /**
  * GET /instructor/assessments
- * List all assessments for this instructor: individual (Assessment) + course-based quizzes (Quiz).
- * Includes submission counts. Chronological order (by due date, then quizzes by creation).
+ * List assessments created by this instructor (real-time). Includes submission counts.
  */
 router.get(
   '/assessments',
@@ -557,63 +556,6 @@ router.get(
           submissions: submissionCounts[a.id] || 0,
           reviewed: reviewedCounts[a.id] || 0,
         };
-      });
-
-      // Course-based quizzes: quizzes in courses created by this instructor
-      const courseRepo = ds.getRepository('Course');
-      const quizRepo = ds.getRepository('Quiz');
-      const attemptRepo = ds.getRepository('QuizAttempt');
-      const myCourses = await courseRepo.find({
-        where: { createdBy: { id: userId }, deletedAt: null },
-        select: { id: true, title: true },
-      });
-      const myCourseIds = myCourses.map((c) => c.id);
-      const courseMap = Object.fromEntries(myCourses.map((c) => [c.id, c]));
-
-      if (myCourseIds.length > 0) {
-        const quizzes = await quizRepo.find({
-          where: { courseId: In(myCourseIds) },
-          order: { createdAt: 'DESC' },
-        });
-        const quizIds = quizzes.map((q) => q.id);
-        let quizSubmissionCounts = {};
-        if (quizIds.length > 0) {
-          const qCounts = await attemptRepo
-            .createQueryBuilder('a')
-            .select('a.quizId', 'quizId')
-            .addSelect('COUNT(*)', 'count')
-            .where('a.quizId IN (:...ids)', { ids: quizIds })
-            .andWhere("a.status = 'completed'")
-            .groupBy('a.quizId')
-            .getRawMany();
-          qCounts.forEach((r) => {
-            quizSubmissionCounts[r.quizId] = Number(r.count) || 0;
-          });
-        }
-        const quizList = quizzes.map((q) => {
-          const course = courseMap[q.courseId];
-          return {
-            id: `q-${q.id}`,
-            title: q.title,
-            type: 'quiz',
-            course: course?.title || 'Course',
-            module: 'Quiz',
-            dueDateISO: null,
-            dueDate: '—',
-            status: 'published',
-            submissions: quizSubmissionCounts[q.id] || 0,
-            reviewed: quizSubmissionCounts[q.id] || 0,
-          };
-        });
-        list.push(...quizList);
-      }
-
-      // Sort chronologically: by due date (null last), then by title
-      list.sort((x, y) => {
-        const a = x.dueDateISO ? new Date(x.dueDateISO).getTime() : Number.MAX_SAFE_INTEGER;
-        const b = y.dueDateISO ? new Date(y.dueDateISO).getTime() : Number.MAX_SAFE_INTEGER;
-        if (a !== b) return a - b;
-        return (x.title || '').localeCompare(y.title || '');
       });
 
       return res.status(200).json({ assessments: list });

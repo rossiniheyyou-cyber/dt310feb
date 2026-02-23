@@ -25,8 +25,7 @@ async function isUserEnrolledInCourse(ds, userId, courseId) {
 
 /**
  * GET /learner/assignments-assessments
- * Returns assignments (Assessment) and course-based quizzes for enrolled courses only.
- * Learners see individual assessments for courses they are enrolled in, plus all quizzes from those courses.
+ * Returns real-time assignments (empty - no backend entity) and quizzes from enrolled courses.
  */
 router.get(
   '/',
