@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from "react";
 import { Search, Filter } from "lucide-react";
-import { ROLES, ASSIGNMENT_TYPES } from "@/data/assignments";
+import { ASSIGNMENT_TYPES } from "@/data/assignments";
 import type { Assignment } from "@/data/assignments";
 import { useLearnerAssignments } from "@/context/LearnerAssignmentsContext";
+import { useCanonicalStore } from "@/context/CanonicalStoreContext";
+import { learningPaths } from "@/data/learningPaths";
 
 const STATUSES = ["Assigned", "Due", "Submitted", "Reviewed", "Overdue"] as const;
 const SORT_OPTIONS = [
@@ -12,12 +14,10 @@ const SORT_OPTIONS = [
   { value: "due-desc", label: "Due date (latest first)" },
   { value: "priority", label: "Priority (overdue first)" },
   { value: "course", label: "Course" },
-  { value: "role", label: "Role" },
 ] as const;
 
 type FilterState = {
   search: string;
-  role: string;
   course: string;
   status: string;
   type: string;
@@ -30,11 +30,24 @@ export default function AssignmentFilters({
   onFilter?: (filtered: Assignment[]) => void;
 }) {
   const { assignments } = useLearnerAssignments();
-  const COURSES = useMemo(() => [...new Set(assignments.map((a) => a.course).filter(Boolean))].sort(), [assignments]);
+  const { getPublishedCoursesForPath } = useCanonicalStore();
+  const availableCourseNames = useMemo(() => {
+    const titles = new Set<string>();
+    learningPaths.forEach((path) => {
+      getPublishedCoursesForPath(path.slug).forEach((c) => {
+        if (c.title?.trim()) titles.add(c.title.trim());
+      });
+    });
+    return [...titles].sort();
+  }, [getPublishedCoursesForPath]);
+  const fromAssignments = useMemo(() => [...new Set(assignments.map((a) => a.course).filter(Boolean))].sort(), [assignments]);
+  const COURSES = useMemo(() => {
+    const set = new Set([...availableCourseNames, ...fromAssignments]);
+    return [...set].sort();
+  }, [availableCourseNames, fromAssignments]);
 
   const [filters, setFilters] = useState<FilterState>({
     search: "",
-    role: "",
     course: "",
     status: "",
     type: "",
@@ -53,12 +66,8 @@ export default function AssignmentFilters({
         (a) =>
           a.title.toLowerCase().includes(q) ||
           a.course.toLowerCase().includes(q) ||
-          a.module.toLowerCase().includes(q) ||
-          a.role.toLowerCase().includes(q)
+          a.module.toLowerCase().includes(q)
       );
-    }
-    if (merged.role) {
-      result = result.filter((a) => a.role === merged.role);
     }
     if (merged.course) {
       result = result.filter((a) => a.course === merged.course);
@@ -92,9 +101,6 @@ export default function AssignmentFilters({
       case "course":
         result.sort((a, b) => a.course.localeCompare(b.course));
         break;
-      case "role":
-        result.sort((a, b) => a.role.localeCompare(b.role));
-        break;
     }
 
     onFilter?.(result);
@@ -117,19 +123,6 @@ export default function AssignmentFilters({
             className="border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-700 w-64 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
           />
         </div>
-
-        <select
-          value={filters.role}
-          onChange={(e) => applyFilters({ role: e.target.value })}
-          className="border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
-        >
-          <option value="">All Roles</option>
-          {ROLES.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
 
         <select
           value={filters.course}
@@ -162,7 +155,7 @@ export default function AssignmentFilters({
           onChange={(e) => applyFilters({ type: e.target.value })}
           className="border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
         >
-          <option value="">All Types</option>
+          <option value="">— Type —</option>
           {ASSIGNMENT_TYPES.map((t) => (
             <option key={t} value={t}>
               {t}

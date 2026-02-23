@@ -11,7 +11,7 @@ const menuItems = [
   { label: "Dashboard", href: "/dashboard/learner", icon: LayoutDashboard },
   { label: "Notifications", href: "/dashboard/learner/notifications", icon: Bell },
   { label: "Calendar", href: "/dashboard/learner/calendar", icon: Calendar },
-  { label: "Assignments", href: "/dashboard/learner/assignments", icon: ClipboardList },
+  { label: "Assessments", href: "/dashboard/learner/assignments", icon: ClipboardList },
   { label: "AI Quiz", href: "/dashboard/learner/ai-quiz", icon: HelpCircle },
 ];
 
@@ -102,7 +102,7 @@ export default function LearnerSidebar() {
           )}
         </div>
 
-        {/* Notifications, Calendar, Assignments, AI Quiz */}
+        {/* Notifications, Calendar, Assessments, AI Quiz */}
         {menuItems.filter((item) => item.label !== "Dashboard").map((item) => {
           const Icon = item.icon;
           return (

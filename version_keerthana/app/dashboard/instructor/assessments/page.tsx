@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Plus,
   Search,
@@ -10,13 +11,20 @@ import {
   Loader2,
   Sparkles,
 } from "lucide-react";
-import { pendingAssessments, ASSESSMENT_TYPES, ASSIGNMENT_SUBTYPES } from "@/data/instructorData";
+import { ASSESSMENT_TYPES, ASSIGNMENT_SUBTYPES } from "@/data/instructorData";
 import { useCanonicalStore } from "@/context/CanonicalStoreContext";
 import type { Assignment } from "@/data/assignments";
 import { ROLES as ASSIGNMENT_ROLES } from "@/data/assignments";
 import type { QuizConfig } from "@/data/quizData";
 import type { CanonicalCourse } from "@/data/canonicalCourses";
 import { generateAssignmentFeedback as generateAssignmentFeedbackApi } from "@/lib/api/aiAssignmentFeedback";
+import { createAssessment } from "@/lib/api/calendar";
+import {
+  getInstructorSubmissions,
+  getInstructorAssessments,
+  type InstructorSubmissionItem,
+  type InstructorAssessmentItem,
+} from "@/lib/api/instructor";
 
 function CreateAssessmentModal({
   courses,
@@ -24,16 +32,22 @@ function CreateAssessmentModal({
   onCreated,
   addAssignment,
   addOrUpdateQuizConfig,
+  initialCourseId,
 }: {
   courses: CanonicalCourse[];
   onClose: () => void;
   onCreated: () => void;
   addAssignment: (a: Assignment) => void;
   addOrUpdateQuizConfig: (q: QuizConfig) => void;
+  initialCourseId?: string;
 }) {
   const [createType, setCreateType] = useState<"assignment" | "quiz">("assignment");
   const [title, setTitle] = useState("");
-  const [courseId, setCourseId] = useState("");
+  const [courseId, setCourseId] = useState(initialCourseId ?? "");
+
+  useEffect(() => {
+    if (initialCourseId) setCourseId(initialCourseId);
+  }, [initialCourseId]);
   const [moduleId, setModuleId] = useState("");
   const [moduleTitle, setModuleTitle] = useState("");
   const [role, setRole] = useState<Assignment["role"]>("Full Stack");
@@ -42,18 +56,21 @@ function CreateAssessmentModal({
   const [timeLimitMinutes, setTimeLimitMinutes] = useState(15);
   const [passingScore, setPassingScore] = useState(70);
   const [attemptLimit, setAttemptLimit] = useState(2);
+  const [quizDueDateISO, setQuizDueDateISO] = useState("");
   const [description, setDescription] = useState("");
+  const [publishNow, setPublishNow] = useState(true);
 
   const selectedCourse = courses.find((c) => c.id === courseId);
   const modules = selectedCourse?.modules ?? [];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
     const course = courses.find((c) => c.id === courseId);
     const courseTitle = course?.title ?? "Course";
     const pathSlug = course?.pathSlug ?? "fullstack";
     const modTitle = (moduleTitle || modules.find((m) => m.id === moduleId)?.title) ?? "Module";
+    const resolvedDueDateISO = dueDateISO || new Date().toISOString().slice(0, 10);
     const dueDate = dueDateISO ? new Date(dueDateISO).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";
 
     if (createType === "assignment") {
@@ -69,10 +86,27 @@ function CreateAssessmentModal({
         role,
         type,
         dueDate,
-        dueDateISO: dueDateISO || new Date().toISOString().slice(0, 10),
+        dueDateISO: resolvedDueDateISO,
         status: "Assigned",
         description: description.trim() || undefined,
       });
+      // Persist to backend for calendar visibility across all users
+      try {
+        const backendCourseId = course?.backendId ?? (courseId && /^\d+$/.test(String(courseId)) ? courseId : undefined);
+        await createAssessment({
+          title: title.trim(),
+          courseId: backendCourseId ? String(backendCourseId) : undefined,
+          courseTitle,
+          pathSlug,
+          module: modTitle,
+          moduleId: moduleId || id,
+          type: "assignment",
+          dueDateISO: resolvedDueDateISO,
+          status: publishNow ? "published" : "draft",
+        });
+      } catch (err) {
+        console.warn("Calendar assessment not created (backend may be unavailable):", err);
+      }
     } else {
       const id = `q-${Date.now()}`;
       addOrUpdateQuizConfig({
@@ -88,6 +122,23 @@ function CreateAssessmentModal({
         instructions: [],
         questions: [],
       });
+      const quizDueISO = quizDueDateISO || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      try {
+        const backendCourseId = course?.backendId ?? (courseId && /^\d+$/.test(String(courseId)) ? courseId : undefined);
+        await createAssessment({
+          title: title.trim(),
+          courseId: backendCourseId ? String(backendCourseId) : undefined,
+          courseTitle,
+          pathSlug,
+          module: modTitle,
+          moduleId: moduleId || id,
+          type: "quiz",
+          dueDateISO: quizDueISO,
+          status: publishNow ? "published" : "draft",
+        });
+      } catch (err) {
+        console.warn("Calendar assessment not created (backend may be unavailable):", err);
+      }
     }
     onCreated();
   };
@@ -209,6 +260,16 @@ function CreateAssessmentModal({
             </>
           )}
           {createType === "quiz" && (
+            <>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Due Date (for calendar)</label>
+              <input
+                type="date"
+                value={quizDueDateISO}
+                onChange={(e) => setQuizDueDateISO(e.target.value)}
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Time Limit (min)</label>
@@ -242,7 +303,20 @@ function CreateAssessmentModal({
                 />
               </div>
             </div>
+            </>
           )}
+          <div className="flex items-center gap-2 py-2">
+            <input
+              type="checkbox"
+              id="publish-now"
+              checked={publishNow}
+              onChange={(e) => setPublishNow(e.target.checked)}
+              className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+            />
+            <label htmlFor="publish-now" className="text-sm text-slate-700">
+              Publish now (visible to enrolled learners; uncheck to save as draft)
+            </label>
+          </div>
           <div className="p-6 border-t border-slate-200 flex justify-end gap-3 -mx-6 -mb-6 px-6 pb-6 pt-4">
             <button type="button" onClick={onClose} className="px-4 py-2.5 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50">
               Cancel
@@ -257,9 +331,10 @@ function CreateAssessmentModal({
   );
 }
 
-type PendingItem = (typeof pendingAssessments)[number] & { assignmentId?: string };
+type PendingItem = InstructorSubmissionItem;
 
 export default function InstructorAssessmentsPage() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<"all" | "assignments" | "quizzes" | "submissions">("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -267,9 +342,12 @@ export default function InstructorAssessmentsPage() {
   const [aiFeedbackText, setAiFeedbackText] = useState("");
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [realQuizSubmissions, setRealQuizSubmissions] = useState<InstructorSubmissionItem[]>([]);
+  const [assignmentSubmissions, setAssignmentSubmissions] = useState<InstructorSubmissionItem[]>([]);
+  const [submissionsLoading, setSubmissionsLoading] = useState(false);
+  const [apiAssessments, setApiAssessments] = useState<InstructorAssessmentItem[]>([]);
+  const [assessmentsLoading, setAssessmentsLoading] = useState(false);
   const {
-    getAssignments,
-    getQuizConfigs,
     getCoursesForInstructor,
     getAssignmentById,
     addAssignment,
@@ -277,9 +355,55 @@ export default function InstructorAssessmentsPage() {
     addOrUpdateQuizConfig,
     refresh,
   } = useCanonicalStore();
-  const assignments = getAssignments();
-  const quizConfigs = getQuizConfigs();
   const courses = getCoursesForInstructor();
+
+  // Prefill and open create modal when coming from course editor (create=true&courseId=...)
+  const urlCreate = searchParams.get("create") === "true";
+  const urlCourseId = searchParams.get("courseId") ?? "";
+  const resolvedCourseId = urlCourseId
+    ? (courses.find((c) => c.id === urlCourseId || String(c.backendId) === urlCourseId)?.id ?? urlCourseId)
+    : "";
+
+  useEffect(() => {
+    if (urlCreate && urlCourseId) setShowCreateModal(true);
+  }, [urlCreate, urlCourseId]);
+
+  const fetchSubmissions = useCallback(async () => {
+    setSubmissionsLoading(true);
+    try {
+      const data = await getInstructorSubmissions();
+      setRealQuizSubmissions(data.quizAttempts || []);
+      setAssignmentSubmissions(data.assignmentSubmissions || []);
+    } catch {
+      setRealQuizSubmissions([]);
+      setAssignmentSubmissions([]);
+    } finally {
+      setSubmissionsLoading(false);
+    }
+  }, []);
+
+  const fetchAssessments = useCallback(async () => {
+    setAssessmentsLoading(true);
+    try {
+      const data = await getInstructorAssessments();
+      setApiAssessments(data.assessments || []);
+    } catch {
+      setApiAssessments([]);
+    } finally {
+      setAssessmentsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAssessments();
+  }, [fetchAssessments]);
+
+  useEffect(() => {
+    if (activeTab !== "submissions") return;
+    fetchSubmissions();
+    const interval = setInterval(fetchSubmissions, 30000);
+    return () => clearInterval(interval);
+  }, [activeTab, fetchSubmissions]);
 
   const handleOpenReview = (item: PendingItem) => {
     setReviewItem(item);
@@ -317,29 +441,7 @@ export default function InstructorAssessmentsPage() {
     }
   };
 
-  const allAssessments = useMemo(() => {
-    const list: { id: string; title: string; type: "assignment" | "quiz"; course: string; module: string; dueDate?: string }[] = [];
-    assignments.forEach((a) => {
-      list.push({
-        id: a.id,
-        title: a.title,
-        type: "assignment",
-        course: a.course,
-        module: a.module,
-        dueDate: a.dueDate,
-      });
-    });
-    Object.values(quizConfigs).forEach((q) => {
-      list.push({
-        id: q.id,
-        title: q.title,
-        type: "quiz",
-        course: q.course,
-        module: q.module,
-      });
-    });
-    return list;
-  }, [assignments, quizConfigs]);
+  const pendingCount = realQuizSubmissions.length + assignmentSubmissions.length;
 
   const tabs = [
     { id: "all" as const, label: "All Assessments" },
@@ -378,9 +480,9 @@ export default function InstructorAssessmentsPage() {
             }`}
           >
             {tab.label}
-            {tab.id === "submissions" && pendingAssessments.length > 0 && (
+            {tab.id === "submissions" && pendingCount > 0 && (
               <span className="ml-2 px-2 py-0.5 bg-amber-200 text-amber-800 rounded-full text-xs">
-                {pendingAssessments.length}
+                {pendingCount}
               </span>
             )}
           </button>
@@ -399,67 +501,108 @@ export default function InstructorAssessmentsPage() {
         />
       </div>
 
-      {/* Sync note */}
-      <div className="bg-teal-50 border border-teal-200 rounded-xl p-4">
-        <p className="text-sm text-teal-800">
-          <strong>Single source of truth:</strong> Assignments and quizzes created here appear in Learner → Assignments and inside the relevant course module. Completion updates course progress and readiness score.
-        </p>
-      </div>
-
       {/* Content by Tab */}
       {activeTab === "submissions" ? (
-        /* Pending Reviews */
-        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
-          <div className="p-4 border-b border-slate-200 bg-amber-50/50">
-            <h2 className="font-semibold text-slate-800">Submissions Awaiting Review</h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Score assessments, provide feedback, and request rework
-            </p>
+        /* Quiz & assignment submissions — real-time from backend + placeholder assignments */
+        <div className="rounded-2xl card-gradient border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+          <div className="p-4 border-b border-slate-200 bg-amber-50/50 flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 className="font-semibold text-slate-800">Quiz & Assignment Submissions</h2>
+              <p className="text-sm text-slate-500 mt-1">
+                Live data from your courses. Quiz attempts are auto-graded; assignments can be reviewed below. Refreshes every 30s.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={fetchSubmissions}
+              disabled={submissionsLoading}
+              className="px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              {submissionsLoading ? "Loading…" : "Refresh now"}
+            </button>
           </div>
           <div className="divide-y divide-slate-100">
-            {pendingAssessments.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-4 hover:bg-slate-50 transition"
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`p-2.5 rounded-lg ${item.type === "assignment" ? "bg-indigo-50" : "bg-purple-50"}`}>
-                    {item.type === "assignment" ? (
-                      <FileText className="w-5 h-5 text-indigo-600" />
-                    ) : (
-                      <HelpCircle className="w-5 h-5 text-purple-600" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-800">{item.title}</p>
-                    <p className="text-sm text-slate-500">
-                      {item.learnerName} • {item.course}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Submitted {new Date(item.submittedAt).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                    item.status === "submitted" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"
-                  }`}>
-                    {item.status === "submitted" ? "Awaiting Review" : "Auto-graded"}
-                  </span>
-                  <button
-                    onClick={() => handleOpenReview(item as PendingItem)}
-                    className="px-3 py-1.5 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition"
-                  >
-                    Review
-                  </button>
-                </div>
+            {realQuizSubmissions.length === 0 && assignmentSubmissions.length === 0 && !submissionsLoading ? (
+              <div className="p-8 text-center text-slate-500">
+                <p>No submissions yet.</p>
+                <p className="text-sm mt-1">When learners submit quizzes or assignments, they will appear here.</p>
               </div>
-            ))}
+            ) : (
+              <>
+                {realQuizSubmissions.map((item) => (
+                  <div
+                    key={`quiz-${item.id}`}
+                    className="flex items-center justify-between p-4 hover:bg-slate-50 transition"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-2.5 rounded-lg bg-purple-50">
+                        <HelpCircle className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-800">{item.title}</p>
+                        <p className="text-sm text-slate-500">
+                          {item.learnerName} • {item.course}
+                        </p>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          Submitted {new Date(item.submittedAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                        Auto-graded
+                      </span>
+                      {item.score != null && item.totalQuestions != null && (
+                        <span className="text-sm font-medium text-slate-700">
+                          Score: {item.score}/{item.totalQuestions}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {assignmentSubmissions.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-4 hover:bg-slate-50 transition"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-2.5 rounded-lg bg-indigo-50">
+                        <FileText className="w-5 h-5 text-indigo-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-800">{item.title}</p>
+                        <p className="text-sm text-slate-500">
+                          {item.learnerName} • {item.course}
+                        </p>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          Submitted {new Date(item.submittedAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        item.status === "submitted" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"
+                      }`}>
+                        {item.status === "submitted" ? "Awaiting Review" : "Reviewed"}
+                      </span>
+                      {item.status === "submitted" && (
+                        <button
+                          onClick={() => handleOpenReview(item)}
+                          className="px-3 py-1.5 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition"
+                        >
+                          Review
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         </div>
       ) : (
         /* All / Assignments / Quizzes - Assessment List */
-        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+        <div className="rounded-2xl card-gradient border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -473,50 +616,61 @@ export default function InstructorAssessmentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {allAssessments
-                  .filter(
-                    (a) =>
-                      activeTab === "all" ||
-                      (activeTab === "assignments" && a.type === "assignment") ||
-                      (activeTab === "quizzes" && a.type === "quiz")
-                  )
-                  .filter(
-                    (a) =>
-                      !searchQuery.trim() ||
-                      a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      a.course.toLowerCase().includes(searchQuery.toLowerCase())
-                  )
-                  .slice(0, 20)
-                  .map((a) => (
-                    <tr key={`${a.type}-${a.id}`} className="border-b border-slate-100 last:border-none hover:bg-slate-50 transition">
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-3">
-                          {a.type === "quiz" ? (
-                            <HelpCircle className="w-5 h-5 text-purple-500" />
-                          ) : (
-                            <FileText className="w-5 h-5 text-indigo-500" />
-                          )}
-                          <div>
-                            <p className="font-medium text-slate-800">{a.title}</p>
-                            <p className="text-xs text-slate-500">{a.type}</p>
+                {assessmentsLoading ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 px-4 text-center text-slate-500">
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Loading assessments…
+                      </span>
+                    </td>
+                  </tr>
+                ) : (
+                  apiAssessments
+                    .filter(
+                      (a) =>
+                        activeTab === "all" ||
+                        (activeTab === "assignments" && a.type === "assignment") ||
+                        (activeTab === "quizzes" && a.type === "quiz")
+                    )
+                    .filter(
+                      (a) =>
+                        !searchQuery.trim() ||
+                        a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        a.course.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .slice(0, 20)
+                    .map((a) => (
+                      <tr key={`${a.type}-${a.id}`} className="border-b border-slate-100 last:border-none hover:bg-slate-50 transition">
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-3">
+                            {a.type === "quiz" ? (
+                              <HelpCircle className="w-5 h-5 text-purple-500" />
+                            ) : (
+                              <FileText className="w-5 h-5 text-indigo-500" />
+                            )}
+                            <div>
+                              <p className="font-medium text-slate-800">{a.title}</p>
+                              <p className="text-xs text-slate-500">{a.type}</p>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          a.type === "quiz" ? "bg-purple-100 text-purple-700" : "bg-indigo-100 text-indigo-700"
-                        }`}>
-                          {a.type === "quiz" ? "Quiz" : "Assignment"}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4 text-sm text-slate-600">
-                        {a.course} / {a.module}
-                      </td>
-                      <td className="py-4 px-4 text-sm text-slate-600">{a.dueDate ?? "—"}</td>
-                      <td className="py-4 px-4 text-center text-slate-600">—</td>
-                      <td className="py-4 px-4 text-center text-slate-600">—</td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            a.type === "quiz" ? "bg-purple-100 text-purple-700" : "bg-indigo-100 text-indigo-700"
+                          }`}>
+                            {a.type === "quiz" ? "Quiz" : "Assignment"}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4 text-sm text-slate-600">
+                          {a.course} / {a.module}
+                        </td>
+                        <td className="py-4 px-4 text-sm text-slate-600">{a.dueDate ?? "—"}</td>
+                        <td className="py-4 px-4 text-center text-slate-600">{a.submissions}</td>
+                        <td className="py-4 px-4 text-center text-slate-600">{a.reviewed}</td>
+                      </tr>
+                    ))
+                )}
               </tbody>
             </table>
           </div>
@@ -528,9 +682,13 @@ export default function InstructorAssessmentsPage() {
         <CreateAssessmentModal
           courses={courses}
           onClose={() => setShowCreateModal(false)}
-          onCreated={() => setShowCreateModal(false)}
+          onCreated={() => {
+            setShowCreateModal(false);
+            fetchAssessments();
+          }}
           addAssignment={addAssignment}
           addOrUpdateQuizConfig={addOrUpdateQuizConfig}
+          initialCourseId={resolvedCourseId}
         />
       )}
 

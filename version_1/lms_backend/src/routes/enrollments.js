@@ -4,6 +4,9 @@ const { getDataSource } = require('../config/db');
 
 const router = express.Router();
 
+/** Default course duration in days for "course end" calendar event when learner enrolls */
+const DEFAULT_COURSE_DURATION_DAYS = 14;
+
 function isValidId(raw) {
   const n = Number.parseInt(String(raw || ''), 10);
   return Number.isFinite(n) && n > 0;
@@ -54,6 +57,40 @@ router.post('/courses/:courseId', auth, async (req, res, next) => {
     }
 
     const saved = await enrollRepo.save(enrollRepo.create({ userId, courseId }));
+
+    // Create calendar events: course start (today) and course end (start + duration)
+    const eventRepo = ds.getRepository('CalendarEvent');
+    const enrolledAt = saved.enrolledAt ? new Date(saved.enrolledAt) : new Date();
+    const startDateStr = enrolledAt.toISOString().split('T')[0];
+    const endDate = new Date(enrolledAt);
+    endDate.setDate(endDate.getDate() + DEFAULT_COURSE_DURATION_DAYS);
+    const endDateStr = endDate.toISOString().split('T')[0];
+    const courseTitle = (course.title || 'Course').trim();
+
+    const startEvent = eventRepo.create({
+      userId,
+      title: `${courseTitle} – Start`,
+      eventType: 'course',
+      eventDate: startDateStr,
+      startTime: null,
+      endTime: null,
+      meetingLink: null,
+      courseId: String(courseId),
+      courseTitle,
+    });
+    const endEvent = eventRepo.create({
+      userId,
+      title: `${courseTitle} – End`,
+      eventType: 'course',
+      eventDate: endDateStr,
+      startTime: null,
+      endTime: null,
+      meetingLink: null,
+      courseId: String(courseId),
+      courseTitle,
+    });
+    await eventRepo.save([startEvent, endEvent]);
+
     return res.status(201).json({
       message: 'Enrolled successfully',
       enrollment: { courseId: String(courseId), enrolledAt: saved.enrolledAt },

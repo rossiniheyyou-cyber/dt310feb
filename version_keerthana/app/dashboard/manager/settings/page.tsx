@@ -82,7 +82,7 @@ export default function ManagerSettingsPage() {
                 </div>
               </div>
             )}
-            <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+            <div className="rounded-2xl card-gradient border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Display name</label>
                 <input
@@ -116,7 +116,7 @@ export default function ManagerSettingsPage() {
               <h1 className="text-2xl font-semibold text-slate-900">Account & Security</h1>
               <p className="text-slate-500 text-sm mt-1">Change your password. Managers do not have access to system-level security settings.</p>
             </div>
-            <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+            <div className="rounded-2xl card-gradient border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Current password</label>
                 <input type="password" className="w-full px-4 py-2.5 rounded-lg border border-slate-300" placeholder="Enter current password" />
@@ -137,7 +137,7 @@ export default function ManagerSettingsPage() {
               <h1 className="text-2xl font-semibold text-slate-900">Notification preferences</h1>
               <p className="text-slate-500 text-sm mt-1">Team deadlines, learner progress alerts, and report reminders.</p>
             </div>
-            <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+            <div className="rounded-2xl card-gradient border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
               <label className="flex items-center justify-between py-2">
                 <span className="text-sm font-medium text-slate-800">Email notifications</span>
                 <input type="checkbox" defaultChecked className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
@@ -158,7 +158,7 @@ export default function ManagerSettingsPage() {
               <h1 className="text-2xl font-semibold text-slate-900">Accessibility</h1>
               <p className="text-slate-500 text-sm mt-1">Display and readability options</p>
             </div>
-            <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+            <div className="rounded-2xl card-gradient border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
               <label className="flex items-center justify-between py-2">
                 <span className="text-sm font-medium text-slate-800">Reduce motion</span>
                 <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />

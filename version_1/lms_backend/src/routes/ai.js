@@ -395,6 +395,75 @@ function isLearner(role) {
   return r === 'learner';
 }
 
+function isInstructor(role) {
+  return ['instructor', 'admin', 'manager'].includes(String(role || '').toLowerCase());
+}
+
+/**
+ * POST /ai/instructor/generate-quiz-questions
+ * Generate quiz questions for preview (instructor only). Returns questions with correctAnswerIndex.
+ * Body: { topicsPrompt?, fileContent?, courseTitle?, numberOfQuestions? (1-20) }
+ */
+router.post('/instructor/generate-quiz-questions', auth, async (req, res, next) => {
+  try {
+    if (!isInstructor(req.user?.role)) {
+      return res.status(403).json({ message: 'Instructor only' });
+    }
+    const { topicsPrompt, fileContent, courseTitle, numberOfQuestions } = req.body || {};
+    const topic = [courseTitle || 'Course'];
+    if (typeof topicsPrompt === 'string' && topicsPrompt.trim()) topic.push('Topics:', topicsPrompt.trim());
+    if (typeof fileContent === 'string' && fileContent.trim()) topic.push('Content from file:', fileContent.trim().slice(0, 15000));
+    const topicStr = topic.join('\n\n');
+    if (!topicStr.trim() || topicStr === 'Course') {
+      return res.status(400).json({ message: 'Provide topicsPrompt or fileContent' });
+    }
+
+    const count = Math.min(20, Math.max(1, Number(numberOfQuestions) || 10));
+
+    const ai = createAIService();
+    const questions = await ai.generateLearnerQuizWithCount(topicStr, count);
+    if (!questions || questions.length !== count) {
+      return res.status(503).json({ message: `AI could not generate quiz (expected ${count} questions)` });
+    }
+    return res.status(200).json({ questions });
+  } catch (err) {
+    if (err?.code === 'ANTHROPIC_API_KEY_MISSING' || err?.code === 'AI_INPUT_INVALID' || err?.code === 'AI_OUTPUT_INVALID_JSON' || err?.code === 'AI_OUTPUT_INVALID_SCHEMA' || isAnthropicAuthError(err)) {
+      return res.status(503).json({ message: isAnthropicAuthError(err) ? AI_AUTH_ERROR_MESSAGE : (err.message || 'AI quiz generation failed') });
+    }
+    console.error('AI instructor quiz generate error:', err?.message || err);
+    return res.status(503).json({ message: err?.message || 'Failed to generate quiz questions' });
+  }
+});
+
+/**
+ * POST /ai/instructor/generate-assignment
+ * Generate assignment problem statement for preview (instructor only).
+ * Body: { prompt?, fileContent? }
+ */
+router.post('/instructor/generate-assignment', auth, async (req, res, next) => {
+  try {
+    if (!isInstructor(req.user?.role)) {
+      return res.status(403).json({ message: 'Instructor only' });
+    }
+    const { prompt, fileContent } = req.body || {};
+    let input = [prompt, fileContent].filter((s) => typeof s === 'string' && s.trim()).join('\n\n').trim();
+    if (!input) {
+      return res.status(400).json({ message: 'Provide prompt or fileContent' });
+    }
+    input = input.slice(0, 15000); // cap size so AI responds in reasonable time
+
+    const ai = createAIService();
+    const description = await ai.generateAssignmentDescription(input);
+    return res.status(200).json({ description });
+  } catch (err) {
+    if (err?.code === 'ANTHROPIC_API_KEY_MISSING' || err?.code === 'AI_INPUT_INVALID' || isAnthropicAuthError(err)) {
+      return res.status(503).json({ message: isAnthropicAuthError(err) ? AI_AUTH_ERROR_MESSAGE : (err.message || 'AI assignment generation failed') });
+    }
+    console.error('AI instructor assignment generate error:', err?.message || err);
+    return res.status(503).json({ message: err?.message || 'Failed to generate assignment' });
+  }
+});
+
 router.post('/quiz/generate', auth, async (req, res, next) => {
   try {
     if (!isLearner(req.user?.role)) {

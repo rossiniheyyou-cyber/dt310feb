@@ -39,7 +39,7 @@ export const learningPaths: LearningPath[] = [
   {
     id: "fullstack",
     slug: "fullstack",
-    title: "Full Stack Developer",
+    title: "Full Stack Web Development",
     description: "Comprehensive path from programming basics to full-stack development with frontend, backend, and DevOps practices.",
     skills: ["JavaScript", "React", "Node.js", "SQL", "Git", "Agile"],
     duration: "6–8 months",

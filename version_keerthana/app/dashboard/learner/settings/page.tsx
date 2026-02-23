@@ -195,7 +195,7 @@ function ProfileSettings({
         </p>
       </div>
 
-      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+      <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div className="flex items-start gap-6">
           <div className="relative flex-shrink-0">
             <div className="w-24 h-24 rounded-full bg-teal-100 flex items-center justify-center">
@@ -303,7 +303,7 @@ function AccountSecurity({ user }: { user: ProfileUser }) {
         </p>
       </div>
 
-      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+      <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div>
           <h3 className="text-sm font-semibold text-slate-800 mb-4">
             Change password
@@ -479,7 +479,7 @@ function NotificationPreferences() {
         </p>
       </div>
 
-      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+      <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div>
           <h3 className="text-sm font-semibold text-slate-800 mb-4">
             Email notifications
@@ -544,7 +544,7 @@ function NotificationPreferences() {
 }
 
 const TARGET_ROLES = [
-  { slug: "fullstack", label: "Full Stack Developer" },
+  { slug: "fullstack", label: "Full Stack Web Development" },
   { slug: "uiux", label: "UI / UX Designer" },
   { slug: "data-analyst", label: "Data Analyst / Engineer" },
   { slug: "cloud-devops", label: "Cloud & DevOps / Cyber Security" },
@@ -599,7 +599,7 @@ function LearningPreferences() {
         </p>
       </div>
 
-      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+      <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         {/* Target Role - change anytime to get new learning paths */}
         <div>
           <h3 className="text-sm font-semibold text-slate-800 mb-3">
@@ -732,7 +732,7 @@ function AccessibilitySettings() {
         </p>
       </div>
 
-      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+      <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">
             Font size
@@ -794,7 +794,7 @@ function PrivacyData() {
         </p>
       </div>
 
-      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+      <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">
             Profile visibility
@@ -874,7 +874,7 @@ function LinkedAccounts() {
         </p>
       </div>
 
-      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-4 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+      <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm space-y-4 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         {accounts.map((acc) => (
           <div
             key={acc.name}
@@ -924,7 +924,7 @@ function SystemPreferences() {
         </p>
       </div>
 
-      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+      <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">
             Theme preference
@@ -989,7 +989,7 @@ function SupportHelp() {
         </p>
       </div>
 
-      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+      <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div className="flex items-start gap-4 p-4 rounded-lg border border-slate-200 hover:border-teal-200 transition">
           <div className="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center flex-shrink-0">
             <HelpCircle size={20} className="text-teal-600" />
@@ -1067,7 +1067,7 @@ function AccountActions() {
         </p>
       </div>
 
-      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+      <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm space-y-6 hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div>
           <h3 className="text-sm font-semibold text-slate-800 mb-2">
             Request account deactivation

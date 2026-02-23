@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -11,9 +11,16 @@ import {
   Trash2,
   MoreVertical,
   BarChart3,
+  BookOpen,
+  Loader2,
+  FileText,
+  HelpCircle,
 } from "lucide-react";
 import { ROLES, COURSE_STATUS } from "@/data/canonicalCourses";
 import { useCanonicalStore } from "@/context/CanonicalStoreContext";
+import { getInstructorMyCourses, getCourseSubmissionStats } from "@/lib/api/instructor";
+import { getCourses } from "@/lib/api/courses";
+import type { InstructorCourse } from "@/lib/api/instructor";
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -50,20 +57,93 @@ function getStatusBadge(status: string) {
   }
 }
 
+type TabId = "my-courses" | "available";
+
 export default function InstructorCoursesPage() {
+  const [activeTab, setActiveTab] = useState<TabId>("my-courses");
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const { getCoursesForInstructor, archiveCourse, deleteCourse } = useCanonicalStore();
-  const courses = getCoursesForInstructor();
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const { getCoursesForInstructor, archiveCourse, deleteCourse, refresh } = useCanonicalStore();
+  const canonicalCourses = getCoursesForInstructor();
+
+  const [myCourses, setMyCourses] = useState<InstructorCourse[]>([]);
+  const [myCoursesLoading, setMyCoursesLoading] = useState(true);
+  const [availableCourses, setAvailableCourses] = useState<{ id: string; title: string; description: string; status: string }[]>([]);
+  const [availableLoading, setAvailableLoading] = useState(false);
+
+  const fetchMyCourses = useCallback(async () => {
+    setMyCoursesLoading(true);
+    try {
+      const res = await getInstructorMyCourses();
+      setMyCourses(res.items || []);
+    } catch {
+      setMyCourses([]);
+    } finally {
+      setMyCoursesLoading(false);
+    }
+  }, []);
+
+  const fetchAvailableCourses = useCallback(async () => {
+    setAvailableLoading(true);
+    try {
+      const res = await getCourses({ limit: 100, status: "published" });
+      setAvailableCourses((res.items || []).map((c) => ({ id: c.id, title: c.title, description: c.description || "", status: c.status })));
+    } catch {
+      setAvailableCourses([]);
+    } finally {
+      setAvailableLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "my-courses") fetchMyCourses();
+    else fetchAvailableCourses();
+  }, [activeTab, fetchMyCourses, fetchAvailableCourses]);
+
+  // Refetch My Courses when page becomes visible (e.g. after creating a draft)
+  useEffect(() => {
+    const onFocus = () => {
+      if (activeTab === "my-courses") fetchMyCourses();
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [activeTab, fetchMyCourses]);
+
+  const courses = activeTab === "my-courses"
+    ? myCourses.map((c) => ({
+        id: c.id,
+        title: c.title,
+        description: c.description,
+        status: c.status,
+        enrolledCount: c.enrolledCount,
+        modules: [] as { id: string }[],
+        completionRate: 0,
+        lastUpdated: c.updatedAt?.split("T")[0] || "",
+        backendId: c.id,
+        roles: c.tags || [],
+      }))
+    : availableCourses.map((c) => ({
+        id: c.id,
+        title: c.title,
+        description: c.description,
+        status: c.status,
+        enrolledCount: 0,
+        modules: [] as { id: string }[],
+        completionRate: 0,
+        lastUpdated: "",
+        backendId: c.id,
+        roles: [] as string[],
+      }));
 
   const filteredCourses = courses.filter((c) => {
     const matchesSearch =
       c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = roleFilter === "all" || c.roles.includes(roleFilter);
+    const matchesRole = roleFilter === "all" || (c as { roles?: string[] }).roles?.includes(roleFilter);
     const matchesStatus = statusFilter === "all" || c.status === statusFilter;
     return matchesSearch && matchesRole && matchesStatus;
   });
@@ -72,12 +152,14 @@ export default function InstructorCoursesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-800">Courses</h1>
-          <p className="text-slate-500 mt-1">
-            Create and manage canonical courses. Published courses appear in Learner → My Courses.
-          </p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-800">Courses</h1>
+        <p className="text-slate-500 mt-1">
+          {activeTab === "my-courses"
+              ? "Your courses — including drafts. Add modules, quizzes, and assessments in the course editor."
+              : "Browse all published courses on the platform."}
+        </p>
+      </div>
         <Link
           href="/dashboard/instructor/courses/new"
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition"
@@ -87,12 +169,50 @@ export default function InstructorCoursesPage() {
         </Link>
       </div>
 
-      {/* Core principle info */}
-      <div className="bg-teal-50 border border-teal-200 rounded-xl p-4">
-        <p className="text-sm text-teal-800">
-          <strong>Single source of truth:</strong> Instructor creates ONE canonical course. The same course, modules, and content automatically appear in Learner → My Courses. Learners consume content — no duplicate uploads.
-        </p>
+      {/* My Courses / Available Courses Tabs */}
+      <div className="flex gap-2 border-b border-slate-200 pb-2">
+        <button
+          onClick={() => setActiveTab("my-courses")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
+            activeTab === "my-courses"
+              ? "bg-teal-600 text-white"
+              : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+          }`}
+        >
+          <BookOpen className="w-4 h-4" />
+          My Courses
+          {myCourses.length > 0 && (
+            <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === "my-courses" ? "bg-teal-500" : "bg-slate-200"}`}>
+              {myCourses.length}
+            </span>
+          )}
+          {myCourses.filter((c) => c.status === "draft").length > 0 && (
+            <span className="px-2 py-0.5 rounded-full text-xs bg-amber-200 text-amber-800" title={`${myCourses.filter((c) => c.status === "draft").length} draft(s)`}>
+              {myCourses.filter((c) => c.status === "draft").length} draft
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("available")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
+            activeTab === "available"
+              ? "bg-teal-600 text-white"
+              : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+          }`}
+        >
+          <BookOpen className="w-4 h-4" />
+          Available Courses
+        </button>
       </div>
+
+      {/* Drafts banner when in My Courses */}
+      {activeTab === "my-courses" && myCourses.filter((c) => c.status === "draft").length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
+          <span className="text-amber-700 font-medium">
+            You have {myCourses.filter((c) => c.status === "draft").length} draft course(s) — click to edit and add modules, quizzes, and assessments.
+          </span>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -133,7 +253,14 @@ export default function InstructorCoursesPage() {
       </div>
 
       {/* Course List */}
-      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+      {(activeTab === "my-courses" && myCoursesLoading) || (activeTab === "available" && availableLoading) ? (
+        <div className="flex items-center justify-center py-16 gap-2 text-slate-600">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          Loading courses…
+        </div>
+      ) : (
+        <>
+      <div className="rounded-2xl card-gradient border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -171,13 +298,13 @@ export default function InstructorCoursesPage() {
                   </td>
                   <td className="py-4 px-4">
                     <div className="flex flex-wrap gap-1 max-w-[180px]">
-                      {course.roles.slice(0, 2).map((r) => (
+                      {(course.roles || []).slice(0, 2).map((r) => (
                         <span key={r} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded truncate max-w-[80px]" title={r}>
                           {r.split(" ")[0]}
                         </span>
                       ))}
-                      {course.roles.length > 2 && (
-                        <span className="text-xs text-slate-400">+{course.roles.length - 2}</span>
+                      {(course.roles || []).length > 2 && (
+                        <span className="text-xs text-slate-400">+{(course.roles || []).length - 2}</span>
                       )}
                     </div>
                   </td>
@@ -229,33 +356,44 @@ export default function InstructorCoursesPage() {
                             <Edit2 className="w-4 h-4" />
                             Edit Course
                           </Link>
-                          <Link
-                            href={`/dashboard/instructor/learners?course=${course.id}`}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                          >
-                            <Users className="w-4 h-4" />
-                            View Learners
-                          </Link>
-                          <button
-                            onClick={() => {
-                              archiveCourse(course.id);
-                              setOpenMenuId(null);
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 w-full text-left"
-                          >
-                            <Archive className="w-4 h-4" />
-                            Archive Course
-                          </button>
-                          <button
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              setDeleteConfirmId(course.id);
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Delete Course
-                          </button>
+                      <Link
+                        href={`/dashboard/instructor/courses/${course.id}?tab=learners`}
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                      >
+                        <Users className="w-4 h-4" />
+                        View Learners
+                      </Link>
+                      <Link
+                        href={`/dashboard/instructor/courses/${course.id}?tab=submissions`}
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Quizzes & Assessments
+                      </Link>
+                          {activeTab === "my-courses" && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  archiveCourse(course.id);
+                                  setOpenMenuId(null);
+                                }}
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 w-full text-left"
+                              >
+                                <Archive className="w-4 h-4" />
+                                Archive Course
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  setDeleteConfirmId(course.id);
+                                }}
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete Course
+                              </button>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
@@ -267,11 +405,23 @@ export default function InstructorCoursesPage() {
         </div>
       </div>
 
-      {filteredCourses.length === 0 && (
-        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-12 text-center shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
-          <p className="text-slate-600 font-medium">No courses match your filters</p>
-          <p className="text-sm text-slate-500 mt-1">Create a new course or adjust your filters</p>
+      {filteredCourses.length === 0 && !myCoursesLoading && !availableLoading && (
+        <div className="rounded-2xl card-gradient border border-slate-200 p-12 text-center shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+          <p className="text-slate-600 font-medium">
+            {activeTab === "my-courses" ? "You haven't created any courses yet" : "No courses match your filters"}
+          </p>
+          <p className="text-sm text-slate-500 mt-1">
+            {activeTab === "my-courses" ? "Create a new course to get started" : "Adjust your filters or check back later"}
+          </p>
+          {activeTab === "my-courses" && (
+            <Link href="/dashboard/instructor/courses/new" className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+              <Plus className="w-5 h-5" />
+              Create Course
+            </Link>
+          )}
         </div>
+      )}
+        </>
       )}
 
       {/* Close dropdown on click outside */}

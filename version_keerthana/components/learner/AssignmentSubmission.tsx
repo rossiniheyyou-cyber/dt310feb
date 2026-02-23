@@ -1,24 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Save, Send, CheckCircle } from "lucide-react";
+import { Upload, Save, Send, CheckCircle, Loader2 } from "lucide-react";
 import type { Assignment } from "@/data/assignments";
+import { submitAssessment } from "@/lib/api/learnerAssignments";
 
 type Props = {
   assignment?: Assignment;
+  onSubmitted?: () => void;
 };
 
-export default function AssignmentSubmission({ assignment }: Props) {
+export default function AssignmentSubmission({ assignment, onSubmitted }: Props) {
   const [link, setLink] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [notes, setNotes] = useState("");
   const [saved, setSaved] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isDraft, setIsDraft] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) setFile(f);
+    const list = e.target.files;
+    if (list?.length) setFiles(Array.from(list));
   };
 
   const handleSaveDraft = () => {
@@ -27,11 +31,34 @@ export default function AssignmentSubmission({ assignment }: Props) {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const handleSubmit = () => {
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    if (!assignment?.id || assignment.type === "Quiz") {
+      setSubmitted(true);
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const content = [link.trim(), notes.trim()].filter(Boolean).join("\n\n");
+      await submitAssessment({
+        assessmentId: assignment.id,
+        content: content || undefined,
+      });
+      setSubmitted(true);
+      onSubmitted?.();
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "response" in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+        : (err as Error)?.message;
+      setSubmitError(msg || "Submission failed. Try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  if (submitted) {
+  const alreadySubmitted = assignment?.status === "Submitted" || assignment?.status === "Reviewed";
+
+  if (submitted || alreadySubmitted) {
     return (
       <div className="card bg-teal-50/50 border-teal-200">
         <div className="flex items-center gap-3 text-teal-700">
@@ -79,6 +106,8 @@ export default function AssignmentSubmission({ assignment }: Props) {
                   type="file"
                   id="file-upload"
                   className="hidden"
+                  accept="*/*"
+                  multiple
                   onChange={handleFileChange}
                 />
                 <label
@@ -87,7 +116,9 @@ export default function AssignmentSubmission({ assignment }: Props) {
                 >
                   <Upload className="h-8 w-8 text-slate-400" />
                   <span className="text-sm text-slate-600">
-                    {file ? file.name : "Click to upload or drag and drop"}
+                    {files.length
+                      ? `${files.length} file(s): ${files.map((f) => f.name).join(", ")}`
+                      : "Click to upload or drag and drop (multiple allowed)"}
                   </span>
                 </label>
               </div>
@@ -117,12 +148,16 @@ export default function AssignmentSubmission({ assignment }: Props) {
             </button>
             <button
               onClick={handleSubmit}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition"
+              disabled={submitting}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition disabled:opacity-60"
             >
-              <Send className="h-4 w-4" />
-              Submit
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {submitting ? "Submitting…" : "Submit"}
             </button>
           </div>
+          {submitError && (
+            <p className="mt-2 text-sm text-red-600">{submitError}</p>
+          )}
         </>
       )}
 

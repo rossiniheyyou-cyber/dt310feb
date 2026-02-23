@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   BookOpen,
@@ -14,45 +14,102 @@ import {
   TrendingUp,
   CheckCircle2,
   Clock,
-  GraduationCap,
+  Loader2,
 } from "lucide-react";
-import { instructorKPIs, overdueReviews } from "@/data/instructorData";
+import { overdueReviews } from "@/data/instructorData";
+import { getInstructorDashboardStats } from "@/lib/api/instructor";
 import DashboardWelcome from "@/components/dashboard/DashboardWelcome";
 
-const kpiCards = [
-  {
-    label: "Active Courses",
-    value: instructorKPIs.activeCourses,
-    icon: BookOpen,
-    color: "text-teal-600",
-    bgColor: "bg-teal-50",
-    borderColor: "border-teal-200",
-  },
-  {
-    label: "Enrolled Learners",
-    value: instructorKPIs.enrolledLearners,
-    icon: Users,
-    color: "text-indigo-600",
-    bgColor: "bg-indigo-50",
-    borderColor: "border-indigo-200",
-  },
-  {
-    label: "Pending Reviews",
-    value: instructorKPIs.pendingReviews,
-    icon: ClipboardCheck,
-    color: "text-amber-600",
-    bgColor: "bg-amber-50",
-    borderColor: "border-amber-200",
-  },
-  {
-    label: "Learners at Risk",
-    value: instructorKPIs.learnersAtRisk,
-    icon: AlertTriangle,
-    color: "text-red-600",
-    bgColor: "bg-red-50",
-    borderColor: "border-red-200",
-  },
-];
+function useKpis() {
+  const [stats, setStats] = useState({
+    activeCourses: 0,
+    enrolledLearners: 0,
+    pendingReviews: 0,
+    learnersAtRisk: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const fetchStats = useCallback(async () => {
+    try {
+      const data = await getInstructorDashboardStats();
+      setStats(data);
+    } catch {
+      setStats({ activeCourses: 0, enrolledLearners: 0, pendingReviews: 0, learnersAtRisk: 0 });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+  return { ...stats, loading, refresh: fetchStats };
+}
+
+function KpiCards({ stats, loading }: { stats: ReturnType<typeof useKpis> }) {
+  const kpiCards = [
+    {
+      label: "Active Courses",
+      value: stats.activeCourses,
+      icon: BookOpen,
+      color: "text-teal-600",
+      bgColor: "bg-teal-50",
+      borderColor: "border-teal-200",
+      desc: "Courses you created",
+    },
+    {
+      label: "Enrolled Learners",
+      value: stats.enrolledLearners,
+      icon: Users,
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-50",
+      borderColor: "border-indigo-200",
+      desc: "In your courses",
+    },
+    {
+      label: "Pending Reviews",
+      value: stats.pendingReviews,
+      icon: ClipboardCheck,
+      color: "text-amber-600",
+      bgColor: "bg-amber-50",
+      borderColor: "border-amber-200",
+      desc: "Awaiting grading",
+    },
+    {
+      label: "Learners Need Attention",
+      value: stats.learnersAtRisk,
+      icon: AlertTriangle,
+      color: "text-red-600",
+      bgColor: "bg-red-50",
+      borderColor: "border-red-200",
+      desc: "Inactive 7+ days",
+    },
+  ];
+  return (
+    <>
+      {kpiCards.map((kpi) => {
+        const Icon = kpi.icon;
+        return (
+          <div
+            key={kpi.label}
+            className={`rounded-2xl card-gradient border ${kpi.borderColor} p-5 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300`}
+          >
+            <div className="flex items-start justify-between">
+              <div className={`p-2.5 rounded-lg ${kpi.bgColor}`}>
+                <Icon className={`w-6 h-6 ${kpi.color}`} />
+              </div>
+              {loading ? (
+                <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+              ) : (
+                <span className="text-3xl font-bold text-slate-800">{kpi.value}</span>
+              )}
+            </div>
+            <p className="text-sm text-slate-600 mt-3 font-medium">{kpi.label}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{kpi.desc}</p>
+          </div>
+        );
+      })}
+    </>
+  );
+}
 
 const quickActions = [
   {
@@ -76,38 +133,22 @@ const quickActions = [
 ];
 
 export default function InstructorDashboard() {
-  const [showCoTeacher, setShowCoTeacher] = useState(false);
+  const kpis = useKpis();
 
   return (
     <>
       <div className="space-y-6">
         <DashboardWelcome />
 
-        {/* KPI Overview */}
+        {/* KPI Overview - Live data from backend */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpiCards.map((kpi) => {
-          const Icon = kpi.icon;
-          return (
-            <div
-              key={kpi.label}
-              className={`rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border ${kpi.borderColor} p-5 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300`}
-            >
-              <div className="flex items-start justify-between">
-                <div className={`p-2.5 rounded-lg ${kpi.bgColor}`}>
-                  <Icon className={`w-6 h-6 ${kpi.color}`} />
-                </div>
-                <span className="text-3xl font-bold text-slate-800">{kpi.value}</span>
-              </div>
-              <p className="text-sm text-slate-600 mt-3 font-medium">{kpi.label}</p>
-            </div>
-          );
-        })}
+          <KpiCards stats={kpis} loading={kpis.loading} />
         </div>
 
         {/* Alerts & Quick Actions Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Overdue Reviews Alert */}
-        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+        <div className="rounded-2xl card-gradient border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-amber-50/50">
             <div className="flex items-center gap-2">
               <Bell className="w-5 h-5 text-amber-600" />
@@ -153,7 +194,7 @@ export default function InstructorDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+        <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <h2 className="font-semibold text-slate-800 mb-4">Quick Actions</h2>
           <div className="space-y-3">
             {quickActions.map((action) => {
@@ -181,8 +222,8 @@ export default function InstructorDashboard() {
         </div>
         </div>
 
-        {/* Recent Activity / Summary */}
-        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+        {/* At a Glance - Uses live KPI data */}
+        <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <h2 className="font-semibold text-slate-800 mb-4">At a Glance</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex items-center gap-4">
@@ -190,8 +231,8 @@ export default function InstructorDashboard() {
               <TrendingUp className="w-6 h-6 text-teal-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-slate-800">68%</p>
-              <p className="text-sm text-slate-500">Average course completion</p>
+              <p className="text-2xl font-bold text-slate-800">{kpis.activeCourses}</p>
+              <p className="text-sm text-slate-500">Courses you created</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -199,7 +240,7 @@ export default function InstructorDashboard() {
               <Clock className="w-6 h-6 text-indigo-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-slate-800">23</p>
+              <p className="text-2xl font-bold text-slate-800">{kpis.pendingReviews}</p>
               <p className="text-sm text-slate-500">Submissions awaiting review</p>
             </div>
           </div>
@@ -208,7 +249,7 @@ export default function InstructorDashboard() {
               <AlertTriangle className="w-6 h-6 text-amber-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-slate-800">8</p>
+              <p className="text-2xl font-bold text-slate-800">{kpis.learnersAtRisk}</p>
               <p className="text-sm text-slate-500">Learners need attention</p>
             </div>
           </div>

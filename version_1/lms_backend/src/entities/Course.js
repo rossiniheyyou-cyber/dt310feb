@@ -26,6 +26,27 @@ const CourseEntity = new EntitySchema({
       length: 1024,
       nullable: true,
     },
+    /** Optional thumbnail image URL (link or S3/CDN path) */
+    thumbnail: {
+      type: 'varchar',
+      length: 1024,
+      nullable: true,
+    },
+    /** Course overview/summary. */
+    overview: {
+      type: 'text',
+      nullable: true,
+    },
+    /** JSON array of learning outcomes. */
+    outcomes: {
+      type: 'json',
+      nullable: true,
+    },
+    /** JSON array of { title, url } for video playlist. */
+    videoPlaylist: {
+      type: 'json',
+      nullable: true,
+    },
     status: {
       type: 'enum',
       enum: COURSE_STATUSES,

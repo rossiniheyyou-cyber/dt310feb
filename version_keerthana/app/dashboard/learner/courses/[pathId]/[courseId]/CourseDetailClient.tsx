@@ -103,7 +103,7 @@ export function CourseDetailClient({ path, course, autoPlayFirst = false }: Prop
   const [takeQuizId, setTakeQuizId] = useState<number | null>(null);
   const [takeQuizTitle, setTakeQuizTitle] = useState("");
   const [showModuleQuiz, setShowModuleQuiz] = useState(false);
-  const [assignmentFile, setAssignmentFile] = useState<File | null>(null);
+  const [assignmentFiles, setAssignmentFiles] = useState<File[]>([]);
   const [assignmentGrading, setAssignmentGrading] = useState(false);
   const [assignmentResult, setAssignmentResult] = useState<{ passed: boolean; feedback: string } | null>(null);
   const [playingVideoUrl, setPlayingVideoUrl] = useState<string | null>(null);
@@ -478,7 +478,7 @@ export function CourseDetailClient({ path, course, autoPlayFirst = false }: Prop
           {/* Quiz / Assignment */}
           {activeModule &&
             (activeModule.type === "quiz" || activeModule.type === "assignment") && (
-              <div className="mb-6 rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+              <div className="mb-6 rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
                 <div className="flex items-center gap-3 mb-4">
                   {activeModule.type === "quiz" ? (
                     <HelpCircle size={24} className="text-teal-600" />
@@ -519,27 +519,29 @@ export function CourseDetailClient({ path, course, autoPlayFirst = false }: Prop
                               <span className="text-sm font-medium text-slate-700 mb-2 block">Upload your submission</span>
                               <input
                                 type="file"
-                                accept=".html,.css,.js,.txt,.md"
+                                accept="*/*"
+                                multiple
                                 onChange={(e) => {
-                                  const f = e.target.files?.[0];
-                                  setAssignmentFile(f ?? null);
+                                  const list = e.target.files;
+                                  setAssignmentFiles(list ? Array.from(list) : []);
                                   setAssignmentResult(null);
                                 }}
                                 className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
                               />
                             </label>
-                            {assignmentFile && (
+                            {assignmentFiles.length > 0 && (
                               <p className="text-sm text-slate-500 mb-3">
-                                Selected: {assignmentFile.name}
+                                Selected: {assignmentFiles.length} file(s) — {assignmentFiles.map((f) => f.name).join(", ")}
                               </p>
                             )}
                             <button
                               onClick={async () => {
-                                if (!assignmentFile || !assignId || !problem) return;
+                                if (!assignmentFiles.length || !assignId || !problem) return;
                                 setAssignmentGrading(true);
                                 setAssignmentResult(null);
                                 try {
-                                  const text = await assignmentFile.text();
+                                  const parts = await Promise.all(assignmentFiles.map((f) => f.text()));
+                                  const text = parts.join("\n\n");
                                   const res = await gradeLearnerAssignment({
                                     assignmentTitle:
                                       assignId === "js-fundamentals-final"
@@ -559,7 +561,7 @@ export function CourseDetailClient({ path, course, autoPlayFirst = false }: Prop
                                   setAssignmentGrading(false);
                                 }
                               }}
-                              disabled={!assignmentFile || assignmentGrading}
+                              disabled={!assignmentFiles.length || assignmentGrading}
                               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 disabled:opacity-50 transition"
                             >
                               {assignmentGrading ? (
@@ -592,7 +594,7 @@ export function CourseDetailClient({ path, course, autoPlayFirst = false }: Prop
                               <button
                                 onClick={() => {
                                   setAssignmentResult(null);
-                                  setAssignmentFile(null);
+                                  setAssignmentFiles([]);
                                 }}
                                 className="mt-3 text-sm font-medium text-teal-600 hover:text-teal-700"
                               >
@@ -706,7 +708,7 @@ export function CourseDetailClient({ path, course, autoPlayFirst = false }: Prop
                     if (canAccess) {
                       setActiveModule(module);
                       setAssignmentResult(null);
-                      setAssignmentFile(null);
+                      setAssignmentFiles([]);
                     }
                   }}
                   disabled={!canAccess}

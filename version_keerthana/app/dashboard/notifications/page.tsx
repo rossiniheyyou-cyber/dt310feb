@@ -137,7 +137,7 @@ export default function NotificationsPage() {
           </div>
         </div>
       ) : mounted && notifications.length === 0 ? (
-        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-12 text-center shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+        <div className="rounded-2xl card-gradient border border-slate-200 p-12 text-center shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <Bell className="w-14 h-14 text-slate-300 mx-auto mb-3" />
           <p className="text-slate-600">No notifications yet</p>
         </div>
@@ -150,7 +150,7 @@ export default function NotificationsPage() {
               return (
                 <div
                   key={notification.id}
-                  className={`flex items-start gap-4 rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-teal-50/20 to-white overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 ${
+                  className={`flex items-start gap-4 rounded-2xl border border-slate-200 card-gradient overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 ${
                     !notification.isRead ? "bg-teal-50/20" : ""
                   }`}
                 >

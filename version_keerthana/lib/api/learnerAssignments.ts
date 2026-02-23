@@ -42,3 +42,13 @@ export const getLearnerAssignmentsAssessments = async (): Promise<LearnerAssignm
   const response = await apiClient.get<LearnerAssignmentsAssessmentsResponse>('/learner/assignments-assessments');
   return response.data;
 };
+
+export interface SubmitAssessmentParams {
+  assessmentId: string;
+  content?: string;
+  fileKey?: string;
+}
+
+export const submitAssessment = async (params: SubmitAssessmentParams): Promise<void> => {
+  await apiClient.post('/learner/assignments-assessments/submit', params);
+};

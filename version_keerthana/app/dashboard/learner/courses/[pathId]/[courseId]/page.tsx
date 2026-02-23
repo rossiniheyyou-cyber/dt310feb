@@ -137,7 +137,7 @@ export default function CourseDetailPage() {
           </div>
         </div>
         <div className="max-w-4xl mx-auto px-6 py-10">
-          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-teal-50/20 to-white p-8 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 card-gradient p-8 shadow-sm">
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">{canonicalCourse.title}</h1>
             <p className="text-slate-600 mb-6">{canonicalCourse.description}</p>
             <div className="flex flex-wrap gap-2 mb-6">

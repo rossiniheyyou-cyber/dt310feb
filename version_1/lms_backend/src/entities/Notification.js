@@ -15,7 +15,7 @@ const NotificationEntity = new EntitySchema({
     },
     type: {
       type: 'enum',
-      enum: ['course_approved', 'course_rejected', 'user_approved', 'user_revoked', 'course_removed', 'user_removed'],
+      enum: ['course_approved', 'course_rejected', 'user_approved', 'user_revoked', 'course_removed', 'user_removed', 'new_assessment', 'assessment_submitted'],
       nullable: false,
     },
     title: {

@@ -255,7 +255,7 @@ router.get(
         }
       }
       recentActivity.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      const recentActivitySlice = recentActivity.slice(0, 10);
+      const recentActivitySlice = recentActivity.slice(0, 5);
 
       return res.status(200).json({
         overview: {

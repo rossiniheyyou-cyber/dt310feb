@@ -62,6 +62,10 @@ function inferContentType(fileName) {
   if (name.endsWith('.webm')) return 'video/webm';
   if (name.endsWith('.mov')) return 'video/quicktime';
   if (name.endsWith('.m4v')) return 'video/x-m4v';
+  if (name.endsWith('.png')) return 'image/png';
+  if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+  if (name.endsWith('.gif')) return 'image/gif';
+  if (name.endsWith('.webp')) return 'image/webp';
   return 'application/octet-stream';
 }
 

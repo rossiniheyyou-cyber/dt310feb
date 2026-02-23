@@ -81,7 +81,7 @@ export default function MyCoursesPage() {
         </div>
 
         {recentCourses.length === 0 ? (
-          <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-12 text-center shadow-sm">
+          <div className="rounded-2xl card-gradient border border-slate-200 p-12 text-center shadow-sm">
             <BookOpen className="w-16 h-16 text-slate-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-slate-800 mb-2">
               No courses yet
@@ -107,7 +107,7 @@ export default function MyCoursesPage() {
                 <Link
                   key={course.id}
                   href={`/dashboard/learner/courses/${pathSlug}/${course.id}`}
-                  className="group relative rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 block"
+                  className="group relative rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 block"
                 >
                   {/* Progress indicator bar at top */}
                   {progress > 0 && (

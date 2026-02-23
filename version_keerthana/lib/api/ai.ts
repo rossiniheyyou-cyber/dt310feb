@@ -105,3 +105,45 @@ export const chatWithAdminBot = async (message: string): Promise<AIChatResponse>
     },
   });
 };
+
+/** Quiz question from AI (for instructor preview) */
+export interface QuizQuestionPreview {
+  questionText: string;
+  options: string[];
+  correctAnswerIndex: number;
+}
+
+// AI generation can take 60–90+ seconds; use longer timeout than default 30s
+const AI_GENERATION_TIMEOUT_MS = 120000; // 2 minutes
+
+/**
+ * Generate quiz questions for instructor preview (edit/regenerate before adding)
+ */
+export const generateQuizQuestions = async (params: {
+  topicsPrompt?: string;
+  fileContent?: string;
+  courseTitle?: string;
+  numberOfQuestions?: number;
+}): Promise<{ questions: QuizQuestionPreview[] }> => {
+  const response = await apiClient.post<{ questions: QuizQuestionPreview[] }>(
+    '/ai/instructor/generate-quiz-questions',
+    params,
+    { timeout: AI_GENERATION_TIMEOUT_MS }
+  );
+  return response.data;
+};
+
+/**
+ * Generate assignment problem statement for instructor preview
+ */
+export const generateAssignmentDescription = async (params: {
+  prompt?: string;
+  fileContent?: string;
+}): Promise<{ description: string }> => {
+  const response = await apiClient.post<{ description: string }>(
+    '/ai/instructor/generate-assignment',
+    params,
+    { timeout: AI_GENERATION_TIMEOUT_MS }
+  );
+  return response.data;
+};

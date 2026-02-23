@@ -48,7 +48,7 @@ export default function AdminCertificatesPage() {
         </select>
       </div>
 
-      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+      <div className="rounded-2xl card-gradient border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -96,7 +96,7 @@ export default function AdminCertificatesPage() {
       </div>
 
       {filtered.length === 0 && (
-        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-12 text-center shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+        <div className="rounded-2xl card-gradient border border-slate-200 p-12 text-center shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <Award className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <p className="text-slate-500">No certificates issued yet.</p>
         </div>

@@ -118,5 +118,5 @@ export type IssuedCertificate = {
 };
 
 export const issuedCertificates: IssuedCertificate[] = [
-  { id: "CERT-FULLSTACK-PROG-BASICS-20250131", pathSlug: "fullstack", courseId: "prog-basics", courseTitle: "Programming Basics", pathTitle: "Full Stack Developer", earnedAt: "2025-01-31T16:00:00Z", learnerId: "l1", learnerName: "Alex Kim", status: "Issued" },
+  { id: "CERT-FULLSTACK-PROG-BASICS-20250131", pathSlug: "fullstack", courseId: "prog-basics", courseTitle: "Programming Basics", pathTitle: "Full Stack Web Development", earnedAt: "2025-01-31T16:00:00Z", learnerId: "l1", learnerName: "Alex Kim", status: "Issued" },
 ];

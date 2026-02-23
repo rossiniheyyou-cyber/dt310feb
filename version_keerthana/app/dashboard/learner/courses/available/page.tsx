@@ -8,6 +8,7 @@ import { syncCoursesFromBackend } from "@/lib/canonicalStore";
 import { learningPaths } from "@/data/learningPaths";
 import { getMyEnrollments } from "@/lib/api/enrollments";
 import { isLocallyEnrolled } from "@/lib/localEnrollments";
+import { fullstackSortIndex, sortFullstackCourses } from "@/lib/fullstackCourseOrder";
 
 export default function AvailableCoursesPage() {
   const { getPublishedCoursesForPath, refresh } = useCanonicalStore();
@@ -38,9 +39,13 @@ export default function AvailableCoursesPage() {
   // Get all published courses grouped by learning path
   const coursesByPath = learningPaths.map((path) => {
     const courses = getPublishedCoursesForPath(path.slug);
+    const sorted =
+      path.slug === "fullstack"
+        ? sortFullstackCourses(courses)
+        : [...courses].sort((a, b) => a.courseOrder - b.courseOrder);
     return {
       path,
-      courses: courses.sort((a, b) => a.courseOrder - b.courseOrder),
+      courses: sorted,
     };
   }).filter((item) => item.courses.length > 0);
 
@@ -77,7 +82,7 @@ export default function AvailableCoursesPage() {
         </div>
 
         {allCourses.length === 0 ? (
-          <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-12 text-center shadow-sm">
+          <div className="rounded-2xl card-gradient border border-slate-200 p-12 text-center shadow-sm">
             <BookOpen className="w-16 h-16 text-slate-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-slate-800 mb-2">
               No courses available
@@ -104,7 +109,7 @@ export default function AvailableCoursesPage() {
                     <Link
                       key={course.id}
                       href={`/dashboard/learner/courses/${path.slug}/${course.id}`}
-                      className="group relative rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 block"
+                      className="group relative rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 block"
                     >
                       {/* Gradient overlay on hover */}
                       <div className="absolute inset-0 bg-gradient-to-br from-teal-50/0 to-teal-50/0 group-hover:from-teal-50/50 group-hover:to-transparent transition-all duration-300 pointer-events-none"></div>
@@ -170,7 +175,7 @@ export default function AvailableCoursesPage() {
                     <Link
                       key={course.id}
                       href={`/dashboard/learner/courses/${course.pathSlug}/${course.id}`}
-                      className="group rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 block"
+                      className="group rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 block"
                     >
                       <div className="flex items-start gap-4 mb-4">
                         <div className="w-12 h-12 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">

@@ -30,6 +30,7 @@ export default function LoginPage() {
   
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [backendReachable, setBackendReachable] = useState<boolean | null>(null);
   const [savedEmails, setSavedEmails] = useState<string[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   
@@ -83,6 +84,14 @@ export default function LoginPage() {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Check if backend is reachable (same origin as API client)
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    fetch(`${apiUrl.replace(/\/+$/, "")}/api/health`, { method: "GET", mode: "cors" })
+      .then((r) => setBackendReachable(r.ok))
+      .catch(() => setBackendReachable(false));
   }, []);
 
   // Surface NextAuth callback errors on the login UI.
@@ -409,6 +418,17 @@ export default function LoginPage() {
                     </h1>
                   </div>
 
+                  {backendReachable === false && (
+                    <div className="mb-4 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-sm">
+                      <p className="font-medium mb-1">Cannot connect to server.</p>
+                      <p className="mb-2">Start the backend in a terminal:</p>
+                      <code className="block bg-amber-100/80 p-2 rounded text-xs break-all">
+                        cd version_1/lms_backend && npm run dev
+                      </code>
+                      <p className="mt-2 text-amber-700">Then refresh this page. Backend must run on port 3001.</p>
+                    </div>
+                  )}
+
                   {error && (
                     <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
                   )}
@@ -564,6 +584,7 @@ export default function LoginPage() {
                 src="/signin-illustration.png"
                 alt="DigitalT3 Learning Platform"
                 fill
+                sizes="(max-width: 1024px) 0px, 50vw"
                 className="object-cover"
                 priority
               />
@@ -575,6 +596,16 @@ export default function LoginPage() {
             <div className="w-full lg:w-1/2 flex flex-col bg-white h-screen overflow-y-auto">
               <div className="flex-1 flex items-center p-8 lg:p-12">
                 <div className="w-full max-w-md">
+                  {backendReachable === false && (
+                    <div className="mb-4 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-sm">
+                      <p className="font-medium mb-1">Cannot connect to server.</p>
+                      <p className="mb-2">Start the backend in a terminal:</p>
+                      <code className="block bg-amber-100/80 p-2 rounded text-xs break-all">
+                        cd version_1/lms_backend && npm run dev
+                      </code>
+                      <p className="mt-2 text-amber-700">Then refresh this page. Backend must run on port 3001.</p>
+                    </div>
+                  )}
                   {mode === "signup-step1" ? (
                     <>
                       {/* Back button */}
@@ -856,6 +887,7 @@ export default function LoginPage() {
                 src="/digitalt3-illustration.png"
                 alt="DigitalT3 Learning Platform"
                 fill
+                sizes="(max-width: 1024px) 0px, 50vw"
                 className="object-contain"
                 priority
               />

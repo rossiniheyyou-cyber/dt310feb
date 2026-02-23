@@ -8,14 +8,26 @@ import AssignmentSubmission from "@/components/learner/AssignmentSubmission";
 import AIAssignmentFeedback from "@/components/learner/AIAssignmentFeedback";
 import AssignmentDetailContent from "@/components/learner/AssignmentDetailContent";
 import ProgressIntegrationCard from "@/components/learner/ProgressIntegrationCard";
-import { useCanonicalStore } from "@/context/CanonicalStoreContext";
+import { useLearnerAssignments } from "@/context/LearnerAssignmentsContext";
 
 export default function AssignmentDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
-  const { getAssignmentById } = useCanonicalStore();
-  const assignment = getAssignmentById(id);
+  const id = (params.id as string)?.replace(/^a-/, "") || "";
+  const idWithPrefix = params.id as string;
+  const { assignments, refresh, loading } = useLearnerAssignments();
+  const assignment = assignments.find(
+    (a) => a.id === idWithPrefix || a.id === `a-${id}` || String(a.id) === id
+  );
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl">
+        <p className="text-slate-600">Loading…</p>
+        <Link href="/dashboard/learner/assignments" className="text-teal-600 font-medium mt-4 inline-block">← Back to Assignments</Link>
+      </div>
+    );
+  }
 
   if (!assignment) {
     return (
@@ -74,7 +86,7 @@ export default function AssignmentDetailPage() {
 
       <ProgressIntegrationCard />
 
-      <AssignmentSubmission assignment={assignment} />
+      <AssignmentSubmission assignment={assignment} onSubmitted={refresh} />
       <AIAssignmentFeedback assignment={assignment} />
     </div>
   );

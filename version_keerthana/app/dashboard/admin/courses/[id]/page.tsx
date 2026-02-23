@@ -127,7 +127,7 @@ export default function AdminCourseDetailPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-          <div className="bg-gradient-to-br from-teal-50 to-teal-100/50 border border-teal-200/60 rounded-xl p-6 hover-glow-intense card-interactive transition-all duration-300">
+          <div className="card-gradient border border-teal-200/60 rounded-xl p-6 hover-glow-intense card-interactive transition-all duration-300">
             <div className="flex items-center gap-3 mb-2">
               <Users className="w-6 h-6 text-teal-700" />
               <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Enrolled</h3>
@@ -136,7 +136,7 @@ export default function AdminCourseDetailPage() {
             <p className="text-xs text-slate-600 mt-1">Learners currently enrolled</p>
           </div>
 
-          <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/60 rounded-xl p-6 hover-glow-intense transition-all duration-300">
+          <div className="card-gradient border border-indigo-200/60 rounded-xl p-6 hover-glow-intense transition-all duration-300">
             <div className="flex items-center gap-3 mb-2">
               <Tag className="w-6 h-6 text-indigo-700" />
               <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Tags</h3>
@@ -155,7 +155,7 @@ export default function AdminCourseDetailPage() {
           </div>
 
           {course.createdBy && (
-            <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 border border-slate-200/60 rounded-xl p-6 hover-glow-intense transition-all duration-300">
+            <div className="card-gradient border border-slate-200/60 rounded-xl p-6 hover-glow-intense transition-all duration-300">
               <div className="flex items-center gap-3 mb-2">
                 <User className="w-6 h-6 text-slate-700" />
                 <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Instructor</h3>
@@ -165,7 +165,7 @@ export default function AdminCourseDetailPage() {
             </div>
           )}
 
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 border border-purple-200/60 rounded-xl p-6 hover-glow-intense transition-all duration-300">
+          <div className="card-gradient border border-purple-200/60 rounded-xl p-6 hover-glow-intense transition-all duration-300">
             <div className="flex items-center gap-3 mb-2">
               <Calendar className="w-6 h-6 text-purple-700" />
               <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Created</h3>

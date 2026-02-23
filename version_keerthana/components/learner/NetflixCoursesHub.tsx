@@ -8,6 +8,7 @@ import { useCanonicalStore } from "@/context/CanonicalStoreContext";
 import { syncCoursesFromBackend } from "@/lib/canonicalStore";
 import { learningPaths } from "@/data/learningPaths";
 import type { CanonicalCourse } from "@/data/canonicalCourses";
+import { sortFullstackCourses } from "@/lib/fullstackCourseOrder";
 
 export default function NetflixCoursesHub() {
   const { state, getMostRecentCourse, refresh } = useLearnerProgress();
@@ -45,7 +46,10 @@ export default function NetflixCoursesHub() {
 
   const coursesByPath = learningPaths.map((path) => ({
     path,
-    courses: getPublishedCoursesForPath(path.slug).sort((a, b) => a.courseOrder - b.courseOrder),
+    courses:
+      path.slug === "fullstack"
+        ? sortFullstackCourses(getPublishedCoursesForPath(path.slug))
+        : getPublishedCoursesForPath(path.slug).sort((a, b) => a.courseOrder - b.courseOrder),
   })).filter((item) => item.courses.length > 0);
 
   if (!mounted) {

@@ -60,7 +60,7 @@ export default function AdminCoursesPage() {
         </select>
       </div>
 
-      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+      <div className="rounded-2xl card-gradient border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -125,7 +125,7 @@ export default function AdminCoursesPage() {
       </div>
 
       {filtered.length === 0 && (
-        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-12 text-center text-slate-500 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+        <div className="rounded-2xl card-gradient border border-slate-200 p-12 text-center text-slate-500 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           No courses match your filters.
         </div>
       )}

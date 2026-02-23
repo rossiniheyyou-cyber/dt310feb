@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { ChevronRight, Clock, BookOpen } from "lucide-react";
 import { PathProgressHeader } from "@/components/learner/PathProgressHeader";
 import { useCanonicalStore } from "@/context/CanonicalStoreContext";
+import { fullstackSortIndex } from "@/lib/fullstackCourseOrder";
 
 export default function LearningPathPage() {
   const params = useParams();
@@ -78,12 +79,16 @@ export default function LearningPathPage() {
               </h2>
               <div className="space-y-3">
                 {byPhase[phaseName]
-                  .sort((a, b) => a.courseOrder - b.courseOrder)
+                  .sort((a, b) =>
+                    pathId === "fullstack"
+                      ? fullstackSortIndex(a) - fullstackSortIndex(b) || a.courseOrder - b.courseOrder
+                      : a.courseOrder - b.courseOrder
+                  )
                   .map((course, courseIdx) => (
                     <Link
                       key={course.id}
                       href={`/dashboard/learner/courses/${path.slug}/${course.id}`}
-                      className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 group"
+                      className="flex items-center justify-between p-4 rounded-2xl card-gradient border border-slate-200 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 group"
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0 text-teal-600 font-semibold text-sm">

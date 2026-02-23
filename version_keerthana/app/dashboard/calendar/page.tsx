@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { Calendar as CalendarIcon, Clock, Users, BookOpen, FileText, Video, Plus, ChevronLeft, ChevronRight, List, Grid, Calendar as CalIcon } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { Calendar as CalendarIcon, Clock, Users, BookOpen, FileText, Video, Plus, ChevronLeft, ChevronRight, List, Grid, Calendar as CalIcon, Bell, Loader2, Pencil, Trash2 } from "lucide-react";
 import { getCurrentUser } from "@/lib/currentUser";
+import { getCalendarEvents, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, updateAssessment, deleteAssessment } from "@/lib/api/calendar";
 
-type EventType = "live_class" | "assignment" | "quiz" | "meeting";
+type EventType = "live_class" | "assignment" | "quiz" | "meeting" | "reminder" | "course";
 type EventStatus = "upcoming" | "live" | "completed";
 type ViewMode = "month" | "week" | "agenda";
 
@@ -27,7 +28,12 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -35,49 +41,174 @@ export default function CalendarPage() {
 
   const user = mounted ? getCurrentUser() : null;
 
-  // Mock events - replace with API calls
+  const fetchEvents = useCallback(async () => {
+    try {
+      const res = await getCalendarEvents();
+      const evts = (res.events || []).map((e) => ({
+        id: e.id,
+        title: e.title,
+        date: e.date instanceof Date ? e.date : new Date(e.date),
+        startTime: e.startTime,
+        endTime: e.endTime,
+        type: (e.type || "reminder") as EventType,
+        status: (e.status || "upcoming") as EventStatus,
+        courseId: e.courseId,
+        courseTitle: e.courseTitle,
+        meetingLink: e.meetingLink,
+      }));
+      setEvents(evts);
+    } catch {
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!mounted) return;
-    // TODO: Fetch events from API based on user role
-    const mockEvents: CalendarEvent[] = [
-      {
-        id: "1",
-        title: "Introduction to React",
-        date: new Date(2025, 1, 5, 10, 0),
-        startTime: "10:00",
-        endTime: "11:30",
-        type: "live_class",
-        status: "upcoming",
-        courseId: "1",
-        courseTitle: "Full Stack Development",
-        instructorName: "Sarah Chen",
-      },
-      {
-        id: "2",
-        title: "Assignment: Build Todo App",
-        date: new Date(2025, 1, 7, 23, 59),
-        startTime: "23:59",
-        type: "assignment",
-        status: "upcoming",
-        courseId: "1",
-        courseTitle: "Full Stack Development",
-      },
-      {
-        id: "3",
-        title: "Team Standup",
-        date: new Date(2025, 1, 6, 9, 0),
-        startTime: "09:00",
-        endTime: "09:30",
-        type: "meeting",
-        status: "upcoming",
-        meetingLink: "https://teams.microsoft.com/l/meetup-join/...",
-      },
-    ];
-    setEvents(mockEvents);
-  }, [mounted]);
+    fetchEvents();
+  }, [mounted, fetchEvents]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const interval = setInterval(fetchEvents, 60000);
+    return () => clearInterval(interval);
+  }, [mounted, fetchEvents]);
 
   const canCreateMeeting = mounted && (user?.role === "instructor" || user?.role === "admin" || user?.role === "manager");
   const canCreateLiveClass = mounted && user?.role === "instructor";
+
+  const canEditEvent = useCallback(
+    (event: CalendarEvent) => {
+      if (!mounted) return false;
+      if (event.type === "course") return false; // system-created, read-only
+      if (event.id.startsWith("ev-")) return true;
+      if (event.id.startsWith("a-") && (user?.role === "instructor" || user?.role === "admin")) return true;
+      return false;
+    },
+    [mounted, user?.role]
+  );
+
+  const handleUpdateEvent = useCallback(
+    async (event: CalendarEvent, updates: Partial<CalendarEvent>) => {
+      if (saving || !canEditEvent(event)) return;
+      setSaving(true);
+      try {
+        if (event.id.startsWith("ev-")) {
+          await updateCalendarEvent(event.id, {
+            title: updates.title,
+            eventType: updates.type as "reminder" | "meeting" | "live_class",
+            eventDate: updates.date ? updates.date.toISOString().split("T")[0] : undefined,
+            startTime: updates.startTime,
+            endTime: updates.endTime,
+            meetingLink: updates.meetingLink,
+          });
+        } else if (event.id.startsWith("a-")) {
+          await updateAssessment(event.id, {
+            title: updates.title,
+            dueDateISO: updates.date ? updates.date.toISOString().split("T")[0] : undefined,
+            courseTitle: updates.courseTitle,
+          });
+        }
+        await fetchEvents();
+        setSelectedEvent(null);
+        setEditingEvent(null);
+      } catch (err) {
+        console.warn("Failed to update event:", err);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [canEditEvent, fetchEvents, saving]
+  );
+
+  const handleDeleteEvent = useCallback(
+    async (event: CalendarEvent) => {
+      if (saving || !canEditEvent(event)) return;
+      if (!confirm(`Delete "${event.title}"? This cannot be undone.`)) return;
+      setSaving(true);
+      try {
+        if (event.id.startsWith("ev-")) {
+          await deleteCalendarEvent(event.id);
+        } else if (event.id.startsWith("a-")) {
+          await deleteAssessment(event.id);
+        }
+        await fetchEvents();
+        setSelectedEvent(null);
+        setEditingEvent(null);
+      } catch (err) {
+        console.warn("Failed to delete event:", err);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [canEditEvent, fetchEvents, saving]
+  );
+
+  const handleSaveMeeting = useCallback(
+    async (meeting: CalendarEvent) => {
+      if (saving) return;
+      setSaving(true);
+      try {
+        await createCalendarEvent({
+          title: meeting.title,
+          eventType: meeting.type === "live_class" ? "live_class" : "meeting",
+          eventDate: meeting.date.toISOString().split("T")[0],
+          startTime: meeting.startTime,
+          endTime: meeting.endTime,
+          meetingLink: meeting.meetingLink,
+          courseId: meeting.courseId,
+          courseTitle: meeting.courseTitle,
+        });
+        await fetchEvents();
+        setShowCreateModal(false);
+      } catch {
+        setEvents((prev) => [...prev, meeting]);
+        setShowCreateModal(false);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [fetchEvents, saving]
+  );
+
+  const handleSaveReminder = useCallback(
+    async (title: string, eventDate: string, startTime?: string) => {
+      if (saving || !title.trim()) return;
+      setSaving(true);
+      try {
+        await createCalendarEvent({
+          title: title.trim(),
+          eventType: "reminder",
+          eventDate,
+          startTime: startTime || "09:00",
+        });
+        await fetchEvents();
+        setShowReminderModal(false);
+      } catch {
+        const d = new Date(eventDate);
+        if (startTime) {
+          const [h, m] = startTime.split(":").map(Number);
+          d.setHours(h, m);
+        }
+        setEvents((prev) => [
+          ...prev,
+          {
+            id: `rem-${Date.now()}`,
+            title: title.trim(),
+            date: d,
+            startTime: startTime,
+            type: "reminder",
+            status: "upcoming" as EventStatus,
+          },
+        ]);
+        setShowReminderModal(false);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [fetchEvents, saving]
+  );
 
   const getEventTypeIcon = (type: EventType) => {
     switch (type) {
@@ -89,42 +220,51 @@ export default function CalendarPage() {
         return <BookOpen className="w-4 h-4" />;
       case "meeting":
         return <Users className="w-4 h-4" />;
+      case "reminder":
+        return <Bell className="w-4 h-4" />;
+      case "course":
+        return <BookOpen className="w-4 h-4" />;
+      default:
+        return <CalendarIcon className="w-4 h-4" />;
     }
   };
 
-  // Event colors: meetings = pink, dues (assignments/quizzes) = blue, live_class = teal
   const getEventTypeBadge = (type: EventType) => {
-    const configs = {
+    const configs: Record<string, { label: string; bg: string }> = {
       live_class: { label: "Class", bg: "bg-teal-100 text-teal-700" },
       assignment: { label: "Assignment", bg: "bg-blue-100 text-blue-700" },
       quiz: { label: "Quiz", bg: "bg-blue-100 text-blue-700" },
       meeting: { label: "Meeting", bg: "bg-pink-100 text-pink-700" },
+      reminder: { label: "Reminder", bg: "bg-amber-100 text-amber-700" },
+      course: { label: "Course", bg: "bg-violet-100 text-violet-700" },
     };
-    const config = configs[type];
+    const config = configs[type] || configs.reminder;
     return (
-      <span className={`px-2 py-0.5 rounded text-xs font-medium ${config.bg}`}>
-        {config.label}
+      <span className={`px-2 py-0.5 rounded text-xs font-medium ${config?.bg || "bg-slate-100 text-slate-700"}`}>
+        {config?.label || type}
       </span>
     );
   };
 
   const getEventChipClass = (type: EventType) => {
-    const configs = {
+    const configs: Record<string, string> = {
       live_class: "bg-teal-100 border-teal-200 text-teal-800",
       assignment: "bg-blue-100 border-blue-200 text-blue-800",
       quiz: "bg-blue-100 border-blue-200 text-blue-800",
       meeting: "bg-pink-100 border-pink-200 text-pink-800",
+      reminder: "bg-amber-100 border-amber-200 text-amber-800",
+      course: "bg-violet-100 border-violet-200 text-violet-800",
     };
-    return configs[type];
+    return configs[type] || "bg-slate-100 border-slate-200 text-slate-800";
   };
 
   const getStatusBadge = (status: EventStatus) => {
-    const configs = {
+    const configs: Record<string, { label: string; bg: string }> = {
       upcoming: { label: "Upcoming", bg: "bg-slate-100 text-slate-700" },
       live: { label: "Live", bg: "bg-green-100 text-green-700" },
       completed: { label: "Completed", bg: "bg-gray-100 text-gray-600" },
     };
-    const config = configs[status];
+    const config = configs[status] || configs.upcoming;
     return (
       <span className={`px-2 py-0.5 rounded text-xs font-medium ${config.bg}`}>
         {config.label}
@@ -269,7 +409,7 @@ export default function CalendarPage() {
     return (
       <div className="flex gap-0 min-h-[560px] bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-soft">
         {/* Left: Top Priorities - DigitalT3 teal */}
-        <div className="w-56 shrink-0 bg-gradient-to-b from-teal-50 to-teal-100/80 border-r border-teal-200/60 flex flex-col">
+        <div className="w-56 shrink-0 card-gradient border-r border-teal-200/60 flex flex-col">
           <div className="p-4 border-b border-teal-200/60">
             <h3 className="text-sm font-bold uppercase tracking-wider text-teal-800">Top Priorities</h3>
             <p className="text-xs text-teal-600 mt-0.5">{monthName} {yearNum}</p>
@@ -326,8 +466,9 @@ export default function CalendarPage() {
                         {dayEvents.slice(0, 3).map((event) => (
                           <div
                             key={event.id}
-                            className={`text-xs p-1.5 rounded border cursor-pointer truncate ${getEventChipClass(event.type)}`}
-                            title={event.title}
+                            onClick={() => setSelectedEvent(event)}
+                            className={`text-xs p-1.5 rounded border cursor-pointer truncate hover:ring-2 hover:ring-teal-300 ${getEventChipClass(event.type)}`}
+                            title={`${event.title} (click to view or edit)`}
                           >
                             {event.title}
                           </div>
@@ -396,8 +537,9 @@ export default function CalendarPage() {
                 {getEventsForWeekCell(dayIndex, segIndex).map((event) => (
                   <div
                     key={event.id}
-                    className={`text-xs p-1.5 rounded border truncate ${getEventChipClass(event.type)}`}
-                    title={event.title}
+                    onClick={() => setSelectedEvent(event)}
+                    className={`text-xs p-1.5 rounded border truncate cursor-pointer hover:ring-2 hover:ring-teal-300 ${getEventChipClass(event.type)}`}
+                    title={`${event.title} (click to view or edit)`}
                   >
                     {event.title}
                   </div>
@@ -424,7 +566,8 @@ export default function CalendarPage() {
             return (
               <div
                 key={event.id}
-                className={`bg-white border rounded-xl p-4 hover:shadow-md transition card-flashy ${
+                onClick={() => setSelectedEvent(event)}
+                className={`bg-white border rounded-xl p-4 hover:shadow-md transition card-flashy cursor-pointer ${
                   isPast ? "border-slate-200 opacity-60" : "border-slate-200"
                 }`}
               >
@@ -433,7 +576,8 @@ export default function CalendarPage() {
                     <div className={`p-2 rounded-lg ${
                       event.type === "meeting" ? "bg-pink-100" :
                       event.type === "assignment" || event.type === "quiz" ? "bg-blue-100" :
-                      event.type === "live_class" ? "bg-teal-100" : "bg-slate-100"
+                      event.type === "live_class" ? "bg-teal-100" :
+                      event.type === "course" ? "bg-violet-100" : "bg-slate-100"
                     }`}>
                       {getEventTypeIcon(event.type)}
                     </div>
@@ -466,11 +610,12 @@ export default function CalendarPage() {
                       </div>
                     </div>
                   </div>
-                  {event.type === "meeting" && event.meetingLink && event.status === "live" && (
+                  {event.type === "meeting" && event.meetingLink && (
                     <a
                       href={event.meetingLink}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition font-medium"
                     >
                       Join
@@ -491,19 +636,37 @@ export default function CalendarPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 mb-1">Calendar</h1>
-          <p className="text-slate-600 text-sm">Live classes, assignment deadlines, quiz schedules, and meetings</p>
+          <p className="text-slate-600 text-sm">Live classes, assignment deadlines, quiz schedules, reminders, and meetings</p>
         </div>
-        {mounted && canCreateMeeting && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition font-medium flex items-center gap-2 shadow-soft hover:shadow-medium"
-          >
-            <Plus className="w-5 h-5" />
-            Create Meet
-          </button>
+        {mounted && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowReminderModal(true)}
+              className="px-4 py-2 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition font-medium flex items-center gap-2"
+            >
+              <Bell className="w-5 h-5" />
+              Add Reminder
+            </button>
+            {canCreateMeeting && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition font-medium flex items-center gap-2 shadow-soft hover:shadow-medium"
+              >
+                <Plus className="w-5 h-5" />
+                Create Meet
+              </button>
+            )}
+          </div>
         )}
       </div>
 
+      {loading ? (
+        <div className="flex items-center justify-center py-24 gap-2 text-slate-600">
+          <Loader2 className="w-8 h-8 animate-spin" />
+          <span>Loading calendar…</span>
+        </div>
+      ) : (
+        <>
       {/* Compact nav bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
@@ -547,6 +710,8 @@ export default function CalendarPage() {
       {viewMode === "month" && renderMonthView()}
       {viewMode === "week" && renderWeekView()}
       {viewMode === "agenda" && renderAgendaView()}
+        </>
+      )}
 
       {/* Create Meeting Modal */}
       {showCreateModal && (
@@ -555,11 +720,236 @@ export default function CalendarPage() {
           canCreateLiveClass={!!canCreateLiveClass}
           onClose={() => setShowCreateModal(false)}
           onSave={(meeting) => {
-            setEvents([...events, meeting]);
-            setShowCreateModal(false);
+            handleSaveMeeting(meeting);
           }}
         />
       )}
+
+      {/* Add Reminder Modal */}
+      {showReminderModal && (
+        <AddReminderModal
+          onClose={() => setShowReminderModal(false)}
+          onSave={handleSaveReminder}
+          saving={saving}
+        />
+      )}
+
+      {/* Event Detail / Edit Modal */}
+      {selectedEvent && (
+        <EventDetailModal
+          event={selectedEvent}
+          isEditing={editingEvent?.id === selectedEvent.id}
+          canEdit={canEditEvent(selectedEvent)}
+          getEventTypeBadge={getEventTypeBadge}
+          getEventTypeIcon={getEventTypeIcon}
+          onClose={() => {
+            setSelectedEvent(null);
+            setEditingEvent(null);
+          }}
+          onEdit={() => setEditingEvent(selectedEvent)}
+          onCancelEdit={() => setEditingEvent(null)}
+          onSaveEdit={(updates) => handleUpdateEvent(selectedEvent, updates)}
+          onDelete={() => handleDeleteEvent(selectedEvent)}
+          saving={saving}
+          canCreateLiveClass={!!canCreateLiveClass}
+        />
+      )}
+    </div>
+  );
+}
+
+function EventDetailModal({
+  event,
+  isEditing,
+  canEdit,
+  getEventTypeBadge,
+  getEventTypeIcon,
+  onClose,
+  onEdit,
+  onCancelEdit,
+  onSaveEdit,
+  onDelete,
+  saving,
+  canCreateLiveClass,
+}: {
+  event: CalendarEvent;
+  isEditing: boolean;
+  canEdit: boolean;
+  getEventTypeBadge: (t: EventType) => JSX.Element;
+  getEventTypeIcon: (t: EventType) => JSX.Element;
+  onClose: () => void;
+  onEdit: () => void;
+  onCancelEdit: () => void;
+  onSaveEdit: (updates: Partial<CalendarEvent>) => void;
+  onDelete: () => void;
+  saving: boolean;
+  canCreateLiveClass: boolean;
+}) {
+  const eventDate = new Date(event.date);
+  const isCalendarEvent = event.id.startsWith("ev-");
+  const isAssessment = event.id.startsWith("a-");
+
+  const [editTitle, setEditTitle] = useState(event.title);
+  const [editDate, setEditDate] = useState(eventDate.toISOString().split("T")[0]);
+  const [editStartTime, setEditStartTime] = useState(event.startTime || "09:00");
+  const [editEndTime, setEditEndTime] = useState(event.endTime || "10:00");
+  const [editType, setEditType] = useState<"reminder" | "meeting" | "live_class">(
+    event.type === "live_class" ? "live_class" : event.type === "meeting" ? "meeting" : "reminder"
+  );
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    const d = new Date(editDate);
+    if (isAssessment) {
+      d.setHours(23, 59, 0, 0);
+      onSaveEdit({ title: editTitle.trim(), date: d });
+    } else {
+      if (editStartTime) {
+        const [h, m] = editStartTime.split(":").map(Number);
+        d.setHours(h, m);
+      }
+      onSaveEdit({
+        title: editTitle.trim(),
+        date: d,
+        startTime: editStartTime,
+        endTime: (editType === "meeting" || editType === "live_class") ? editEndTime : undefined,
+        type: editType as EventType,
+      });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditTitle(event.title);
+    setEditDate(new Date(event.date).toISOString().split("T")[0]);
+    setEditStartTime(event.startTime || "09:00");
+    setEditEndTime(event.endTime || "10:00");
+    setEditType(event.type === "live_class" ? "live_class" : event.type === "meeting" ? "meeting" : "reminder");
+    onCancelEdit();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 card-flashy">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold text-slate-900">{isEditing ? "Edit" : "Event Details"}</h3>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500">
+            ×
+          </button>
+        </div>
+
+        {isEditing ? (
+          <form onSubmit={handleSave} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Title</label>
+              <input
+                type="text"
+                required
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">{isAssessment ? "Due Date" : "Date"}</label>
+              <input
+                type="date"
+                required
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            </div>
+            {isCalendarEvent && !isAssessment && (
+              <>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Time</label>
+                  <input
+                    type="time"
+                    value={editStartTime}
+                    onChange={(e) => setEditStartTime(e.target.value)}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                {(editType === "meeting" || editType === "live_class") && (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">End Time</label>
+                    <input
+                      type="time"
+                      value={editEndTime}
+                      onChange={(e) => setEditEndTime(e.target.value)}
+                      className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Type</label>
+                  <select
+                    value={editType}
+                    onChange={(e) => setEditType(e.target.value as "reminder" | "meeting" | "live_class")}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="reminder">Reminder</option>
+                    {canCreateLiveClass && <option value="live_class">Live Class</option>}
+                    <option value="meeting">Meeting</option>
+                  </select>
+                </div>
+              </>
+            )}
+            <div className="flex items-center gap-3 pt-4">
+              <button type="button" onClick={handleCancelEdit} className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 transition font-medium">
+                Cancel
+              </button>
+              <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition font-medium disabled:opacity-60 flex items-center justify-center gap-2">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                Save Changes
+              </button>
+            </div>
+          </form>
+        ) : (
+          <>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-slate-100">{getEventTypeIcon(event.type)}</div>
+                <div>
+                  <h4 className="font-semibold text-slate-900">{event.title}</h4>
+                  {getEventTypeBadge(event.type)}
+                </div>
+              </div>
+              {event.courseTitle && <p className="text-sm text-slate-600">Course: {event.courseTitle}</p>}
+              <div className="flex items-center gap-4 text-sm text-slate-500">
+                <div className="flex items-center gap-1">
+                  <CalIcon className="w-4 h-4" />
+                  {eventDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </div>
+                {event.startTime && (
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    {event.startTime}{event.endTime ? ` – ${event.endTime}` : ""}
+                  </div>
+                )}
+              </div>
+              {event.meetingLink && (
+                <a href={event.meetingLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-700 font-medium">
+                  <Video className="w-4 h-4" />
+                  Join meeting
+                </a>
+              )}
+            </div>
+            {canEdit && (
+              <div className="flex items-center gap-3 mt-6 pt-4 border-t border-slate-200">
+                <button onClick={onEdit} className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 transition font-medium flex items-center justify-center gap-2">
+                  <Pencil className="w-4 h-4" />
+                  Edit
+                </button>
+                <button onClick={onDelete} disabled={saving} className="flex-1 px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition font-medium flex items-center justify-center gap-2 disabled:opacity-60">
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -694,6 +1084,94 @@ function CreateMeetingModal({
               className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition font-medium"
             >
               Create Meeting
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AddReminderModal({
+  onClose,
+  onSave,
+  saving,
+}: {
+  onClose: () => void;
+  onSave: (title: string, eventDate: string, startTime?: string) => void;
+  saving: boolean;
+}) {
+  const [title, setTitle] = useState("");
+  const [eventDate, setEventDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [startTime, setStartTime] = useState("09:00");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    onSave(title.trim(), eventDate, startTime);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 card-flashy">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-slate-900">Add Reminder</h3>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500">
+            ×
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Reminder Title</label>
+            <input
+              type="text"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              placeholder="e.g., Review notes before quiz"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Date</label>
+            <input
+              type="date"
+              required
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
+              className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Time (Optional)</label>
+            <input
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          <div className="flex items-center gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 transition font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                "Add Reminder"
+              )}
             </button>
           </div>
         </form>

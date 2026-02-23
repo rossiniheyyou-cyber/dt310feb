@@ -73,7 +73,7 @@ export default function AiQuizPage() {
           </p>
         </div>
 
-        <section className="mb-8 p-6 rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+        <section className="mb-8 p-6 rounded-2xl card-gradient border border-slate-200 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <BookOpen size={20} className="text-teal-600" />
             Start practice quiz
@@ -146,7 +146,7 @@ export default function AiQuizPage() {
         <section>
           <Link
             href="/dashboard/learner/ai-quiz/attempts"
-            className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 text-slate-700 font-medium shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300"
+            className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl card-gradient border border-slate-200 text-slate-700 font-medium shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300"
           >
             <Award size={20} />
             View past attempts

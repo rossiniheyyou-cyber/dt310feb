@@ -25,7 +25,8 @@ async function isUserEnrolledInCourse(ds, userId, courseId) {
 
 /**
  * GET /learner/assignments-assessments
- * Returns real-time assignments (empty - no backend entity) and quizzes from enrolled courses.
+ * Returns assignments (Assessment) and course-based quizzes for enrolled courses only.
+ * Learners see individual assessments for courses they are enrolled in, plus all quizzes from those courses.
  */
 router.get(
   '/',
@@ -53,6 +54,48 @@ router.get(
         select: { courseId: true },
       });
       const courseIds = [...new Set(enrollments.map((e) => e.courseId))];
+      const enrolledCourseIdSet = new Set(courseIds.map(String));
+
+      const assignments = [];
+      try {
+        const assessmentRepo = ds.getRepository('Assessment');
+        const subRepo = ds.getRepository('AssessmentSubmission');
+        const assessmentRows = await assessmentRepo.find({
+          where: { status: 'published' },
+          order: { dueDateISO: 'ASC' },
+        });
+        const mySubmissions = await subRepo.find({
+          where: { userId },
+          select: { assessmentId: true, status: true },
+        });
+        const subByAssessment = {};
+        mySubmissions.forEach((s) => { subByAssessment[s.assessmentId] = s.status; });
+        for (const a of assessmentRows) {
+          const match = !a.courseId || enrolledCourseIdSet.has(String(a.courseId));
+          if (!match) continue;
+          const dueDate = a.dueDateISO
+            ? new Date(a.dueDateISO).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+            : '';
+          const subStatus = subByAssessment[a.id];
+          assignments.push({
+            id: `a-${a.id}`,
+            title: a.title,
+            description: a.description || null,
+            course: a.courseTitle || 'General',
+            courseId: a.courseId || '',
+            pathSlug: a.pathSlug || 'fullstack',
+            module: a.module || 'Assignment',
+            moduleId: a.moduleId || `a-${a.id}`,
+            role: 'General',
+            type: a.type === 'quiz' ? 'Quiz' : 'Coding',
+            dueDate,
+            dueDateISO: a.dueDateISO || '',
+            status: subStatus === 'reviewed' ? 'Reviewed' : subStatus ? 'Submitted' : 'Assigned',
+          });
+        }
+      } catch (_) {
+        // Assessment / AssessmentSubmission table may not exist yet
+      }
 
       const quizzes = [];
       for (const courseId of courseIds) {
@@ -108,20 +151,100 @@ router.get(
       const totalQuizzes = quizzes.length;
       const completedQuizzes = quizzes.filter((q) => q.status === 'Reviewed' || q.status === 'Submitted').length;
       const pendingQuizzes = quizzes.filter((q) => q.status === 'Assigned').length;
+      const totalAssignments = assignments.length;
+      const now = new Date().toISOString().slice(0, 10);
+      const overdueAssignments = assignments.filter((a) => a.dueDateISO && a.dueDateISO < now).length;
+
+      const completedAssignments = assignments.filter((a) => a.status === 'Submitted' || a.status === 'Reviewed').length;
 
       return res.status(200).json({
-        assignments: [],
+        assignments,
         quizzes,
         summary: {
-          totalAssignments: 0,
-          completedAssignments: 0,
-          pendingAssignments: 0,
-          overdueAssignments: 0,
+          totalAssignments: totalAssignments,
+          completedAssignments,
+          pendingAssignments: totalAssignments - completedAssignments,
+          overdueAssignments,
           totalQuizzes: totalQuizzes,
           completedQuizzes,
           pendingQuizzes,
         },
       });
+    } catch (err) {
+      return next(err);
+    }
+  }
+);
+
+/**
+ * POST /learner/assignments-assessments/submit
+ * Submit an assignment (assessment). Enrolled learners only. Notifies instructor.
+ */
+router.post(
+  '/submit',
+  auth,
+  rbac(['learner']),
+  async (req, res, next) => {
+    try {
+      const userId = Number(req.user?.id);
+      if (!Number.isFinite(userId)) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      const { assessmentId: rawId, content, fileKey } = req.body || {};
+      const assessmentId = Number.parseInt(String(rawId || '').replace(/^a-/, ''), 10);
+      if (!Number.isFinite(assessmentId)) {
+        return res.status(400).json({ message: 'assessmentId is required' });
+      }
+
+      const ds = getDataSource();
+      if (!ds || !ds.isInitialized) {
+        return res.status(503).json({ message: 'Database not available' });
+      }
+
+      const assessmentRepo = ds.getRepository('Assessment');
+      const assessment = await assessmentRepo.findOne({
+        where: { id: assessmentId, status: 'published' },
+        select: { id: true, courseId: true, title: true, createdById: true },
+      });
+      if (!assessment) {
+        return res.status(404).json({ message: 'Assessment not found or not published' });
+      }
+
+      const enrolled = await isUserEnrolledInCourse(ds, userId, Number(assessment.courseId));
+      if (!enrolled) {
+        return res.status(403).json({ message: 'You must be enrolled in this course to submit' });
+      }
+
+      const subRepo = ds.getRepository('AssessmentSubmission');
+      const existing = await subRepo.findOne({ where: { userId, assessmentId } });
+      if (existing) {
+        existing.content = typeof content === 'string' ? content.trim() || null : null;
+        existing.fileKey = fileKey || null;
+        existing.status = 'submitted';
+        await subRepo.save(existing);
+      } else {
+        const submission = subRepo.create({
+          userId,
+          assessmentId,
+          content: typeof content === 'string' ? content.trim() || null : null,
+          fileKey: fileKey || null,
+          status: 'submitted',
+        });
+        await subRepo.save(submission);
+      }
+
+      const notificationRepo = ds.getRepository('Notification');
+      await notificationRepo.save(notificationRepo.create({
+        userId: assessment.createdById,
+        type: 'assessment_submitted',
+        title: 'Assessment submitted',
+        message: `A learner submitted "${assessment.title}".`,
+        metadata: { assessmentId, submittedBy: userId },
+        isRead: false,
+      }));
+
+      return res.status(201).json({ message: 'Submission saved' });
     } catch (err) {
       return next(err);
     }

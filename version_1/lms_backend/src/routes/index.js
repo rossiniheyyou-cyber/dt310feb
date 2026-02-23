@@ -19,6 +19,8 @@ const learnerDashboardRoutes = require('./learnerDashboard');
 const learnerProgressRoutes = require('./learnerProgress');
 const learnerCertificatesRoutes = require('./learnerCertificates');
 const learnerAssignmentsRoutes = require('./learnerAssignments');
+const calendarRoutes = require('./calendar');
+const instructorRoutes = require('./instructor');
 
 const router = express.Router();
 
@@ -138,6 +140,12 @@ router.use('/learner/certificates', learnerCertificatesRoutes);
 
 // Learner assignments & assessments (quizzes from enrolled courses)
 router.use('/learner/assignments-assessments', learnerAssignmentsRoutes);
+
+// Calendar events (reminders, meetings, assessments with due dates)
+router.use('/calendar', calendarRoutes);
+
+// Instructor dashboard and course management
+router.use('/instructor', instructorRoutes);
 
 // Convenience nested endpoint for listing lessons by course
 // Documented as: /courses/{courseId}/lessons

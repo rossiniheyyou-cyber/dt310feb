@@ -7,7 +7,7 @@ import apiClient from './client';
 
 // Type definitions
 export interface MediaUploadRequest {
-  contentTypeCategory: 'lesson_video' | 'assignment_submission' | 'resource_file';
+  contentTypeCategory: 'lesson_video' | 'assignment_submission' | 'resource_file' | 'course_thumbnail';
   fileName: string;
   contentType?: string;
   courseId?: number;

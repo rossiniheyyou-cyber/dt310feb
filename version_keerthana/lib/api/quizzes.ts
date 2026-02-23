@@ -49,6 +49,9 @@ export interface CreateQuizPayload {
   topicsPrompt?: string;
   fileContent?: string;
   questions?: Array<{ questionText: string; options: string[]; correctAnswerIndex: number }>;
+  numberOfQuestions?: number;
+  passMark?: number;
+  totalPoints?: number;
 }
 
 export async function createQuiz(

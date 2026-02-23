@@ -12,19 +12,21 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '*')
   .map((o) => o.trim())
   .filter(Boolean);
 
+// Always allow localhost frontend (dev and local prod)
+const localhostOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow non-browser clients without origin and allow all if '*' configured
-    if (!origin || allowedOrigins.includes('*')) {
-      return cb(null, true);
-    }
-    if (allowedOrigins.includes(origin)) {
-      return cb(null, true);
-    }
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.includes('*')) return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    if (localhostOrigins.includes(origin)) return cb(null, true);
     return cb(new Error('Not allowed by CORS'));
   },
   methods: (process.env.ALLOWED_METHODS || 'GET,POST,PUT,DELETE,PATCH,OPTIONS').split(',').map((m) => m.trim()),
   allowedHeaders: (process.env.ALLOWED_HEADERS || 'Content-Type,Authorization').split(',').map((h) => h.trim()),
+  credentials: true,
+  optionsSuccessStatus: 204,
   maxAge: Number(process.env.CORS_MAX_AGE || 600),
 }));
 

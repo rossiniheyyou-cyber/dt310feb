@@ -147,38 +147,17 @@ export const instructorLearners = [
   },
 ];
 
-// Pending assessments for review
-export const pendingAssessments = [
-  {
-    id: "a1",
-    assignmentId: "1",
-    learnerName: "Alex Kim",
-    course: "REST API Development",
-    title: "Build REST API for User Management",
-    type: "assignment",
-    submittedAt: "2025-01-30T14:30:00Z",
-    status: "submitted",
-  },
-  {
-    id: "a2",
-    assignmentId: "3",
-    learnerName: "Priya Sharma",
-    course: "HTML & CSS",
-    title: "Responsive Portfolio Project",
-    type: "assignment",
-    submittedAt: "2025-01-29T10:00:00Z",
-    status: "submitted",
-  },
-  {
-    id: "q1",
-    learnerName: "David Lee",
-    course: "JavaScript ES6+",
-    title: "ES6 Concepts Quiz",
-    type: "quiz",
-    submittedAt: "2025-01-30T16:00:00Z",
-    status: "auto_graded",
-  },
-];
+// Pending assessments for review — real-time only from API (getInstructorSubmissions)
+export const pendingAssessments: Array<{
+  id: string;
+  assignmentId?: string;
+  learnerName: string;
+  course: string;
+  title: string;
+  type: string;
+  submittedAt: string;
+  status: string;
+}> = [];
 
 // Report summary data
 export const reportSummaries = {

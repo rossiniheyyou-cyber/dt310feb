@@ -30,10 +30,19 @@ export interface PaginatedCoursesResponse {
   total: number;
 }
 
+export interface VideoPlaylistItem {
+  title: string;
+  url: string;
+}
+
 export interface CourseCreateRequest {
   title: string;
   description?: string;
   videoUrl?: string;
+  thumbnail?: string;
+  overview?: string;
+  outcomes?: string[];
+  videoPlaylist?: VideoPlaylistItem[];
   status?: 'draft' | 'pending_approval' | 'published' | 'archived' | 'rejected';
   tags?: string[];
 }
@@ -42,6 +51,7 @@ export interface CourseUpdateRequest {
   title?: string;
   description?: string;
   videoUrl?: string;
+  thumbnail?: string;
   status?: 'draft' | 'pending_approval' | 'published' | 'archived' | 'rejected';
   tags?: string[];
 }

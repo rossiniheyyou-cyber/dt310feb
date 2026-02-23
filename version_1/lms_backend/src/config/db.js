@@ -131,6 +131,9 @@ function buildMySqlDataSourceOptionsFromEnv() {
       require('../entities/UserProgress').UserProgressEntity,
       require('../entities/CourseCompletion').CourseCompletionEntity,
       require('../entities/CourseEnrollment').CourseEnrollmentEntity,
+      require('../entities/CalendarEvent').CalendarEventEntity,
+      require('../entities/Assessment').AssessmentEntity,
+      require('../entities/AssessmentSubmission').AssessmentSubmissionEntity,
     ],
 
     migrations: [path.join(migrationsDir, '*.js')],

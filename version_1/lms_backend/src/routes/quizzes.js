@@ -4,7 +4,9 @@ const { getDataSource } = require('../config/db');
 const { createAIService } = require('../services/ai');
 
 const router = express.Router();
-const QUIZ_SIZE = 10;
+const QUIZ_SIZE = 10; // AI-generated quizzes
+const MIN_MANUAL_QUESTIONS = 1;
+const MAX_QUESTIONS = 20;
 
 function isInstructor(role) {
   return ['instructor', 'INSTRUCTOR', 'admin', 'ADMIN', 'manager', 'MANAGER'].includes(String(role || ''));
@@ -23,6 +25,26 @@ async function isUserEnrolledInCourse(ds, userId, courseId) {
     select: { id: true },
   });
   return !!row;
+}
+
+/** Normalize manual quiz questions: 1-20 MCQs, 4 options each, correctAnswerIndex 0-3 */
+function normalizeManualQuiz(quiz) {
+  if (!Array.isArray(quiz)) return null;
+  const normalized = [];
+  for (const item of quiz) {
+    if (!item || typeof item !== 'object') return null;
+    const questionText = typeof item.questionText === 'string' ? item.questionText.trim() : '';
+    const options = Array.isArray(item.options)
+      ? item.options.map((o) => (typeof o === 'string' ? o.trim() : '')).filter(Boolean)
+      : [];
+    const idxRaw = item.correctAnswerIndex;
+    const correctAnswerIndex = Number.isFinite(Number(idxRaw)) ? Number(idxRaw) : NaN;
+    if (!questionText || options.length !== 4 || !Number.isInteger(correctAnswerIndex) || correctAnswerIndex < 0 || correctAnswerIndex > 3) {
+      return null;
+    }
+    normalized.push({ questionText, options, correctAnswerIndex });
+  }
+  return normalized.length >= MIN_MANUAL_QUESTIONS && normalized.length <= MAX_QUESTIONS ? normalized : null;
 }
 
 /** Strip correctAnswerIndex for take endpoint */
@@ -95,7 +117,7 @@ router.post('/courses/:courseId/quizzes', auth, async (req, res, next) => {
     if (!isValidId(courseId)) {
       return res.status(400).json({ message: 'Invalid course ID' });
     }
-    const { title, questions, generateWithAi, topicsPrompt, fileContent } = req.body || {};
+    const { title, questions, generateWithAi, topicsPrompt, fileContent, numberOfQuestions, passMark, totalPoints } = req.body || {};
     const titleStr = typeof title === 'string' ? title.trim() : '';
     if (!titleStr) {
       return res.status(400).json({ message: 'title is required' });
@@ -128,19 +150,34 @@ router.post('/courses/:courseId/quizzes', auth, async (req, res, next) => {
         const topic = [course.title || titleStr];
         if (topicsStr) topic.push('Topics to cover:', topicsStr);
         if (fileStr) topic.push('Content from uploaded document:', fileStr);
-        questionsSnapshot = await ai.generateLearnerQuiz(topic.join('\n\n'), 'medium');
+        const count = Math.min(20, Math.max(1, Number(numberOfQuestions) || 10));
+        questionsSnapshot = await ai.generateLearnerQuizWithCount(topic.join('\n\n'), count);
       } catch (aiErr) {
         console.error('AI quiz generate error:', aiErr?.message);
         return res.status(503).json({
           message: aiErr?.message || 'AI could not generate quiz. Try adding questions manually.',
         });
       }
+      const expectedCount = Math.min(20, Math.max(1, Number(numberOfQuestions) || 10));
+      if (!questionsSnapshot || questionsSnapshot.length !== expectedCount) {
+        return res.status(400).json({
+          message: `AI must generate exactly ${expectedCount} questions (each with questionText, options[4], correctAnswerIndex 0-3)`,
+        });
+      }
+    } else {
+      // Manual quiz: validate provided questions
+      const normalized = questionsSnapshot ? normalizeManualQuiz(questionsSnapshot) : null;
+      if (!normalized) {
+        return res.status(400).json({
+          message: `Manual quiz requires ${MIN_MANUAL_QUESTIONS}-${MAX_QUESTIONS} questions (each with questionText, options[4], correctAnswerIndex 0-3)`,
+        });
+      }
+      questionsSnapshot = normalized;
     }
-    if (!questionsSnapshot || questionsSnapshot.length !== QUIZ_SIZE) {
-      return res.status(400).json({
-        message: `Exactly ${QUIZ_SIZE} questions required (each with questionText, options[4], correctAnswerIndex 0-3)`,
-      });
-    }
+
+    const totalQ = questionsSnapshot.length;
+    const passMarkVal = passMark != null ? Number(passMark) : null;
+    const totalPointsVal = totalPoints != null ? Number(totalPoints) : totalQ;
 
     const quizRepo = ds.getRepository('Quiz');
     const quiz = quizRepo.create({
@@ -148,6 +185,8 @@ router.post('/courses/:courseId/quizzes', auth, async (req, res, next) => {
       createdById: instructorId,
       title: titleStr,
       questionsSnapshot,
+      passMark: passMarkVal,
+      totalPoints: totalPointsVal,
     });
     await quizRepo.save(quiz);
     return res.status(201).json({
@@ -213,12 +252,13 @@ router.get('/quizzes/:id', auth, async (req, res, next) => {
         return res.status(403).json({ message: 'You must enroll in this course to access this quiz' });
       }
     }
+    const qList = Array.isArray(quiz.questionsSnapshot) ? quiz.questionsSnapshot : [];
     return res.status(200).json({
       id: quiz.id,
       courseId: quiz.courseId,
       title: quiz.title,
       questions: questionsForTake(quiz.questionsSnapshot),
-      totalQuestions: QUIZ_SIZE,
+      totalQuestions: qList.length,
     });
   } catch (err) {
     return next(err);
@@ -241,13 +281,6 @@ router.post('/quizzes/:id/submit', auth, async (req, res, next) => {
     if (!isValidId(quizId)) {
       return res.status(400).json({ message: 'Invalid quiz ID' });
     }
-    const { answers } = req.body || {};
-    const answerList = Array.isArray(answers)
-      ? answers.slice(0, QUIZ_SIZE).map((a) => (Number(a) >= 0 && Number(a) <= 3 ? Number(a) : 0))
-      : [];
-    if (answerList.length !== QUIZ_SIZE) {
-      return res.status(400).json({ message: `answers must be an array of ${QUIZ_SIZE} numbers (0-3)` });
-    }
 
     const ds = getDataSource();
     if (!ds || !ds.isInitialized) {
@@ -263,10 +296,18 @@ router.post('/quizzes/:id/submit', auth, async (req, res, next) => {
       return res.status(403).json({ message: 'You must enroll in this course to submit this quiz' });
     }
 
-    const questions = quiz.questionsSnapshot || [];
+    const questions = Array.isArray(quiz.questionsSnapshot) ? quiz.questionsSnapshot : [];
+    const totalQuestions = questions.length;
+    const { answers } = req.body || {};
+    const answerList = Array.isArray(answers)
+      ? answers.slice(0, totalQuestions).map((a) => (Number(a) >= 0 && Number(a) <= 3 ? Number(a) : 0))
+      : [];
+    if (answerList.length !== totalQuestions) {
+      return res.status(400).json({ message: `answers must be an array of ${totalQuestions} numbers (0-3)` });
+    }
     let score = 0;
     const correctAnswers = [];
-    for (let i = 0; i < QUIZ_SIZE; i++) {
+    for (let i = 0; i < totalQuestions; i++) {
       const q = questions[i];
       const correct = q && Number.isInteger(q.correctAnswerIndex) ? q.correctAnswerIndex : 0;
       correctAnswers.push(correct);
@@ -279,7 +320,7 @@ router.post('/quizzes/:id/submit', auth, async (req, res, next) => {
       userId,
       answersSnapshot: answerList,
       score,
-      totalQuestions: QUIZ_SIZE,
+      totalQuestions,
       status: 'completed',
       completedAt: new Date(),
     });
@@ -287,7 +328,7 @@ router.post('/quizzes/:id/submit', auth, async (req, res, next) => {
 
     return res.status(200).json({
       score,
-      totalQuestions: QUIZ_SIZE,
+      totalQuestions,
       correctAnswers,
       attemptId: attempt.id,
     });

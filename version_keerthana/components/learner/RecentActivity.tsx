@@ -23,7 +23,7 @@ function formatTimestamp(isoDate: string): string {
 
 export default function RecentActivity() {
   const { state } = useLearnerProgress();
-  const activities = state.activityLog?.slice(0, 8) ?? [];
+  const activities = state.activityLog?.slice(0, 5) ?? [];
 
   const iconMap = {
     course_accessed: BookOpen,

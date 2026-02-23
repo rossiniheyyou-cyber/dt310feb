@@ -31,10 +31,12 @@ function sanitizeFileName(fileName) {
  * Helper: build S3 key based on category and IDs
  */
 function buildS3Key(category, params) {
-  const { courseId, lessonId, assignmentId, resourceId, fileName } = params;
+  const { courseId, lessonId, assignmentId, resourceId, fileName, userId } = params;
   const sanitized = sanitizeFileName(fileName);
 
   switch (category) {
+    case 'course_thumbnail':
+      return `courses/${courseId || 'draft'}/thumbnails/${userId || 'user'}_${Date.now()}_${sanitized}`;
     case 'lesson_video':
       if (!courseId || !lessonId) {
         throw new Error('courseId and lessonId required for lesson_video');
@@ -197,8 +199,8 @@ router.post('/upload-url', auth, rbac(WRITE_ROLES), async (req, res, next) => {
   try {
     const { contentTypeCategory, fileName, contentType, courseId, lessonId, assignmentId, resourceId } = req.body;
 
-    if (!contentTypeCategory || !['lesson_video', 'assignment_submission', 'resource_file'].includes(contentTypeCategory)) {
-      return res.status(400).json({ message: 'contentTypeCategory must be one of: lesson_video, assignment_submission, resource_file' });
+    if (!contentTypeCategory || !['lesson_video', 'assignment_submission', 'resource_file', 'course_thumbnail'].includes(contentTypeCategory)) {
+      return res.status(400).json({ message: 'contentTypeCategory must be one of: lesson_video, assignment_submission, resource_file, course_thumbnail' });
     }
 
     if (!fileName || typeof fileName !== 'string' || fileName.trim().length === 0) {
@@ -214,6 +216,7 @@ router.post('/upload-url', auth, rbac(WRITE_ROLES), async (req, res, next) => {
         assignmentId: assignmentId ? Number(assignmentId) : null,
         resourceId: resourceId ? Number(resourceId) : null,
         fileName,
+        userId: req.user?.id ? String(req.user.id) : null,
       });
     } catch (err) {
       return res.status(400).json({ message: err.message });

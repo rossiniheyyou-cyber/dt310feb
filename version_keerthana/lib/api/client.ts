@@ -5,8 +5,9 @@
 
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-// Get API URL from environment variable
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Backend mounts routes at /api; ensure base URL includes it
+const BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
+const API_BASE_URL = BASE.includes('/api') ? BASE : `${BASE}/api`;
 
 // Create axios instance
 const apiClient = axios.create({

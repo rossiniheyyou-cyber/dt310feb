@@ -49,11 +49,11 @@ export default function LearnerCertificatesPage() {
       </div>
 
       {loading ? (
-        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-12 text-center shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+        <div className="rounded-2xl card-gradient border border-slate-200 p-12 text-center shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <div className="animate-pulse text-slate-500">Loading certificates...</div>
         </div>
       ) : earned.length === 0 ? (
-        <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-12 text-center shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+        <div className="rounded-2xl card-gradient border border-slate-200 p-12 text-center shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
           <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
             <Award className="w-8 h-8 text-slate-400" />
           </div>
@@ -79,7 +79,7 @@ export default function LearnerCertificatesPage() {
           {earned.map((cert) => (
             <div
               key={`${cert.pathSlug}-${cert.courseId}-${cert.earnedAt}`}
-              className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300"
+              className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="w-12 h-12 rounded-lg bg-teal-50 flex items-center justify-center shrink-0">

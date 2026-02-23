@@ -7,7 +7,7 @@ import { updateLearningProfile } from "@/lib/api/learningProfile";
 import { enrollInPath } from "@/lib/learnerProgressStore";
 
 const DOMAIN_OPTIONS = [
-  { slug: "fullstack", label: "Full Stack Developer", hint: "Build web apps" },
+  { slug: "fullstack", label: "Full Stack Web Development", hint: "Build web apps" },
   { slug: "uiux", label: "UI / UX Designer", hint: "Design interfaces" },
   { slug: "data-analyst", label: "Data Analyst / Engineer", hint: "Data & analytics" },
   { slug: "cloud-devops", label: "Cloud & DevOps", hint: "Infrastructure" },
@@ -128,7 +128,7 @@ export default function LearningPathOnboarding({
                 <textarea
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
-                  placeholder="e.g., I want to build web applications as a Full Stack Developer"
+                  placeholder="e.g., I want to build web applications with Full Stack Web Development"
                   className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"
                   rows={3}
                 />

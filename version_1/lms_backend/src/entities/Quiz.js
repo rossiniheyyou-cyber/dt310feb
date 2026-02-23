@@ -26,10 +26,19 @@ const QuizEntity = new EntitySchema({
       length: 500,
       nullable: false,
     },
-    /** JSON array of 10 items: { questionText, options[4], correctAnswerIndex } */
+    /** JSON array of items: { questionText, options[4], correctAnswerIndex } */
     questionsSnapshot: {
       type: 'json',
       nullable: false,
+    },
+    /** Pass criteria: minimum correct to pass (out of totalPoints) */
+    passMark: {
+      type: 'int',
+      nullable: true,
+    },
+    totalPoints: {
+      type: 'int',
+      nullable: true,
     },
     createdAt: {
       type: 'datetime',

@@ -185,6 +185,10 @@ function toCourseResponse(course) {
     title: course.title,
     description: course.description,
     videoUrl: course.videoUrl || undefined,
+    thumbnail: course.thumbnail || undefined,
+    overview: course.overview || undefined,
+    outcomes: Array.isArray(course.outcomes) ? course.outcomes : [],
+    videoPlaylist: Array.isArray(course.videoPlaylist) ? course.videoPlaylist : [],
     status: course.status,
     tags: Array.isArray(course.tags) ? course.tags : [],
     createdBy: createdBy || undefined,
@@ -221,6 +225,15 @@ function validateCreatePayload(body) {
     errors.push('videoUrl must be a string');
   }
 
+  const thumbnail = body?.thumbnail;
+  if (thumbnail !== undefined && thumbnail !== null && typeof thumbnail !== 'string') {
+    errors.push('thumbnail must be a string');
+  }
+
+  const overview = body?.overview;
+  const outcomes = body?.outcomes;
+  const videoPlaylist = body?.videoPlaylist;
+
   return {
     ok: errors.length === 0,
     errors,
@@ -228,6 +241,10 @@ function validateCreatePayload(body) {
       title: typeof title === 'string' ? title.trim() : undefined,
       description: typeof description === 'string' ? description.trim() : undefined,
       videoUrl: typeof videoUrl === 'string' && videoUrl.trim() ? videoUrl.trim() : undefined,
+      thumbnail: typeof thumbnail === 'string' && thumbnail.trim() ? thumbnail.trim() : undefined,
+      overview: typeof overview === 'string' ? overview.trim() || null : null,
+      outcomes: Array.isArray(outcomes) ? outcomes : null,
+      videoPlaylist: Array.isArray(videoPlaylist) ? videoPlaylist : null,
       status,
       tags: tagsNormalized !== null ? tagsNormalized : undefined,
     },
@@ -277,6 +294,19 @@ function validateUpdatePayload(body) {
     } else {
       updates.videoUrl = body.videoUrl.trim() || null;
     }
+  }
+  if (body?.thumbnail !== undefined) {
+    updates.thumbnail = typeof body.thumbnail === 'string' && body.thumbnail.trim() ? body.thumbnail.trim() : null;
+  }
+
+  if (body?.overview !== undefined) {
+    updates.overview = typeof body.overview === 'string' ? body.overview.trim() || null : null;
+  }
+  if (body?.outcomes !== undefined) {
+    updates.outcomes = Array.isArray(body.outcomes) ? body.outcomes : null;
+  }
+  if (body?.videoPlaylist !== undefined) {
+    updates.videoPlaylist = Array.isArray(body.videoPlaylist) ? body.videoPlaylist : null;
   }
 
   if (Object.keys(updates).length === 0) {
@@ -436,6 +466,10 @@ router.post('/', auth, rbac(WRITE_ROLES), async (req, res, next) => {
       title: data.title,
       description: data.description || '',
       videoUrl: data.videoUrl || null,
+      thumbnail: data.thumbnail || null,
+      overview: data.overview || null,
+      outcomes: data.outcomes || null,
+      videoPlaylist: data.videoPlaylist || null,
       status,
       tags: data.tags || [],
       publishedAt: (status === 'published' || status === 'pending_approval') ? now : null,

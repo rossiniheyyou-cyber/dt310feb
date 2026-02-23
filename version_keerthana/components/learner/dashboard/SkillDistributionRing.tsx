@@ -171,7 +171,7 @@ export default function SkillDistributionRing() {
   if (loading) return null;
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 relative">
+    <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300 relative">
       <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide text-center mb-6">
         Skills Distribution
       </h3>

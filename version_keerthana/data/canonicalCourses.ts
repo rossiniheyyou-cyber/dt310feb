@@ -5,7 +5,7 @@
  */
 
 export const ROLES = [
-  "Full Stack Developer",
+  "Full Stack Web Development",
   "UI / UX Designer",
   "Data Analyst / Engineer",
   "Cloud & DevOps Engineer",
@@ -89,7 +89,7 @@ const HTML_CSS_COURSE: CanonicalCourse = {
   thumbnail: "/image.png",
   estimatedDuration: "3–4 hours",
   status: "published",
-  roles: ["Full Stack Developer"],
+  roles: ["Full Stack Web Development"],
   phase: "Foundation",
   courseOrder: 1,
   prerequisiteCourseIds: [],
@@ -201,7 +201,7 @@ const JS_FUNDAMENTALS_COURSE: CanonicalCourse = {
   thumbnail: "/image.png",
   estimatedDuration: "2–3 hours",
   status: "published",
-  roles: ["Full Stack Developer"],
+  roles: ["Full Stack Web Development"],
   phase: "Foundation",
   courseOrder: 2,
   prerequisiteCourseIds: ["html-css"],

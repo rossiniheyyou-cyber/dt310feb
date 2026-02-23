@@ -67,12 +67,17 @@ body {
   border-color: rgba(0, 128, 128, 0.3) !important;
 }
 
+/* Card/container gradient – welcome banner style (pale cyan to light aqua) */
+.card-gradient {
+  background: linear-gradient(to bottom right, #F0FCFD, #AAEDE6);
+}
+
 /* Premium Card Styles */
 .card {
-  @apply bg-white rounded-xl border border-slate-200/60 shadow-sm;
+  @apply rounded-xl border border-slate-200/60 shadow-sm;
   @apply transition-all duration-300 ease-out;
   padding: 1.5rem;
-  background: linear-gradient(to bottom, #ffffff 0%, #fafafa 100%);
+  background: linear-gradient(to bottom right, #F0FCFD, #AAEDE6);
 }
 
 .card:hover {

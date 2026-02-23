@@ -163,7 +163,7 @@ export interface NextStepItem {
 export const progressOverview: ProgressOverviewData = {
   overallCompletion: 68,
   readinessStatus: "On Track",
-  targetRole: "Full Stack Developer",
+  targetRole: "Full Stack Web Development",
   learningPathProgress: 42,
   totalEnrolledCourses: 7,
   completedCourses: 3,
@@ -180,7 +180,7 @@ export const progressOverview: ProgressOverviewData = {
 
 export const learningPathProgress: LearningPathProgressData = {
   pathId: "fullstack",
-  pathTitle: "Full Stack Developer",
+  pathTitle: "Full Stack Web Development",
   description: "Comprehensive path from programming basics to full-stack development",
   totalDuration: "6–8 months",
   overallProgress: 42,

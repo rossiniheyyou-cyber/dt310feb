@@ -189,6 +189,78 @@ class AIService {
   }
 
   /**
+   * Generate N MCQs for instructor quiz (variable count). Used for course creation.
+   * @param {string} topic
+   * @param {number} count - number of questions (1-20)
+   * @returns {Promise<Array<{questionText: string, options: string[], correctAnswerIndex: number}>>}
+   */
+  async generateLearnerQuizWithCount(topic, count = 10) {
+    const input = typeof topic === 'string' ? topic.trim() : '';
+    if (!input) {
+      const err = new Error('topic is required');
+      err.code = 'AI_INPUT_INVALID';
+      throw err;
+    }
+    const n = Math.min(20, Math.max(1, Number(count) || 10));
+
+    const systemPrompt = [
+      'You are an enterprise LMS quiz generator for learner self-assessment.',
+      'You MUST respond with ONLY a valid JSON array (no markdown, no code fences, no commentary).',
+      `The JSON array MUST contain exactly ${n} objects.`,
+      'Each object MUST have exactly these fields:',
+      '- questionText: string',
+      '- options: array of exactly 4 strings',
+      '- correctAnswerIndex: integer 0-3 (index into options)',
+      'Do not include any other keys.',
+      'Questions MUST be based on the topic provided. Options MUST be plausible and non-overlapping.',
+    ].join('\n');
+
+    const msg = await this.client.messages.create({
+      model: DEFAULT_MODEL,
+      max_tokens: 4096,
+      temperature: 0.3,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: ['TOPIC:', input].join('\n') }],
+    });
+
+    const text = Array.isArray(msg.content)
+      ? msg.content
+          .filter((c) => c && c.type === 'text')
+          .map((c) => c.text)
+          .join('\n')
+      : '';
+
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      const start = text.indexOf('[');
+      const end = text.lastIndexOf(']');
+      if (start >= 0 && end > start) {
+        try {
+          parsed = JSON.parse(text.slice(start, end + 1));
+        } catch (err) {
+          const e = new Error('AI quiz response was not valid JSON');
+          e.code = 'AI_OUTPUT_INVALID_JSON';
+          throw e;
+        }
+      } else {
+        const err = new Error('AI quiz response was not valid JSON');
+        err.code = 'AI_OUTPUT_INVALID_JSON';
+        throw err;
+      }
+    }
+
+    const normalized = normalizeQuiz(parsed);
+    if (!normalized || normalized.length !== n) {
+      const err = new Error(`AI quiz response did not match required schema (expected ${n} questions)`);
+      err.code = 'AI_OUTPUT_INVALID_SCHEMA';
+      throw err;
+    }
+    return normalized;
+  }
+
+  /**
    * Generate 10 MCQs for learner AI quiz based on course/lesson topic and difficulty.
    * @param {string} topic - e.g. course title + lesson title
    * @param {string} difficulty - 'easy' | 'medium' | 'hard'
@@ -263,6 +335,43 @@ class AIService {
       throw err;
     }
     return normalized;
+  }
+
+  /**
+   * Generate assignment problem statement from a prompt.
+   * @param {string} prompt - Assignment topic/requirements/rubric
+   * @returns {Promise<string>}
+   */
+  async generateAssignmentDescription(prompt) {
+    const input = typeof prompt === 'string' ? prompt.trim() : '';
+    if (!input) {
+      const err = new Error('prompt is required');
+      err.code = 'AI_INPUT_INVALID';
+      throw err;
+    }
+
+    const systemPrompt = [
+      'You are an enterprise LMS assignment generator.',
+      'Write a clear, detailed assignment problem statement based on the prompt below.',
+      'Include: title/heading, objectives, instructions, deliverables, and grading criteria if applicable.',
+      'Be professional and specific. Do not add commentary or meta text.',
+    ].join('\n');
+
+    const msg = await this.client.messages.create({
+      model: DEFAULT_MODEL,
+      max_tokens: 2048,
+      temperature: 0.4,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: ['ASSIGNMENT PROMPT:', input].join('\n') }],
+    });
+
+    const text = Array.isArray(msg.content)
+      ? msg.content
+          .filter((c) => c && c.type === 'text')
+          .map((c) => c.text)
+          .join('\n')
+      : '';
+    return text.trim();
   }
 
   /**

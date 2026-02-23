@@ -33,7 +33,7 @@ function loadInitial(): CanonicalStoreState {
 function inferPathSlugFromTags(tags: string[]): string {
   // Map common role tags to path slugs
   const tagToPathMap: Record<string, string> = {
-    "Full Stack Developer": "fullstack",
+    "Full Stack Web Development": "fullstack",
     "UI / UX Designer": "uiux",
     "Data Analyst / Engineer": "data-analyst",
     "Cloud & DevOps Engineer": "cloud-devops",
@@ -57,33 +57,36 @@ async function syncBackendCourses(): Promise<CanonicalCourse[]> {
     // Fetch all courses from backend (draft, pending_approval, published) so instructor sees their courses with correct IDs
     const response = await getCourses({ limit: 100 });
     
+    const apiIdStr = (id: unknown) => (id != null ? String(id) : "");
     // Transform backend courses to canonical format
     return response.items.map((apiCourse) => {
-      // Check if course already exists in canonical store (by ID)
-      const existing = getCanonicalState().courses.find((c) => c.id === apiCourse.id);
-      
-      // If exists, preserve canonical fields (roles, phase, pathSlug, modules, etc.)
-      // but update status and basic info from backend
+      const backendIdStr = apiIdStr(apiCourse.id);
+      // Match by canonical id or backendId so instructor-published course (id=frontendId, backendId=7) is updated when API returns id=7
+      const existing = getCanonicalState().courses.find(
+        (c) => c.id === apiCourse.id || (c.backendId != null && apiIdStr(c.backendId) === backendIdStr)
+      );
+
+      // If exists, preserve canonical id and fields; update status and basic info from backend
       if (existing) {
         return {
           ...existing,
-          backendId: apiCourse.id, // Update backendId
+          id: existing.id, // keep canonical id for stable URLs
+          backendId: apiCourse.id,
           title: apiCourse.title,
           description: apiCourse.description,
           videoUrl: (apiCourse as { videoUrl?: string }).videoUrl ?? existing.videoUrl,
           status: apiCourse.status as "published" | "draft" | "archived" | "pending_approval" | "rejected",
           lastUpdated: apiCourse.updatedAt?.split("T")[0] || new Date().toISOString().split("T")[0],
-          // Ensure status is updated to published if backend says so
-          ...(apiCourse.status === "published" && existing.status !== "published" ? { status: "published" as const } : {}),
         };
       }
-      
+
       // New course from backend - create canonical format
       const inferredPathSlug = inferPathSlugFromTags(apiCourse.tags || []);
-      
+      const idStr = backendIdStr || String(apiCourse.id);
+
       return {
-        id: apiCourse.id, // Use backend ID as the canonical ID for backend courses
-        backendId: apiCourse.id, // Also store as backendId for reference
+        id: idStr,
+        backendId: apiCourse.id,
         title: apiCourse.title,
         description: apiCourse.description,
         videoUrl: (apiCourse as { videoUrl?: string }).videoUrl,
@@ -247,24 +250,31 @@ export function getCoursesForInstructor(): CanonicalCourse[] {
   );
 }
 
+// Course titles to hide from Available Courses (e.g. legacy or retired courses)
+const EXCLUDED_COURSE_TITLES = [
+  "AI with Python",
+  "Artificial Intelligence with Python",
+  "Programming Basics",
+  "REST API Development",
+  "Web Development",
+];
+
 export function getPublishedCoursesForPath(pathSlug: string): CanonicalCourse[] {
-  const filtered = getCanonicalState().courses.filter(
-    (c) => c.pathSlug === pathSlug && c.status === "published"
+  return getCanonicalState().courses.filter(
+    (c) =>
+      c.pathSlug === pathSlug &&
+      c.status === "published" &&
+      !EXCLUDED_COURSE_TITLES.includes(c.title.trim())
   );
-  // Full Stack Developer path: show HTML & CSS and JavaScript Fundamentals
-  if (pathSlug === "fullstack") {
-    const htmlCss = getCourseById("html-css");
-    const jsFund = getCourseById("javascript-fundamentals");
-    const courses: CanonicalCourse[] = [htmlCss, jsFund].filter((c): c is CanonicalCourse => !!c);
-    return courses.length ? courses : filtered.filter((c) => c.id === "html-css" || c.id === "javascript-fundamentals");
-  }
-  return filtered;
 }
 
 export function getCourseById(id: string): CanonicalCourse | undefined {
-  const fromStore = getCanonicalState().courses.find((c) => c.id === id);
-  if (id === "html-css" || id === "javascript-fundamentals") {
-    const fromData = getCourseFromData(id);
+  const idStr = String(id);
+  const fromStore = getCanonicalState().courses.find(
+    (c) => String(c.id) === idStr || (c.backendId != null && String(c.backendId) === idStr)
+  );
+  if (idStr === "html-css" || idStr === "javascript-fundamentals") {
+    const fromData = getCourseFromData(idStr);
     if (fromData?.modules?.length) {
       return { ...fromData, backendId: fromStore?.backendId ?? fromData.backendId };
     }

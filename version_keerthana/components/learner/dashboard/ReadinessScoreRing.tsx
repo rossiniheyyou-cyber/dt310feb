@@ -20,7 +20,7 @@ export default function ReadinessScoreRing() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50 border border-slate-200 p-6 animate-pulse">
+      <div className="rounded-2xl card-gradient border border-slate-200 p-6 animate-pulse">
         <div className="flex justify-center">
           <div className="w-[140px] h-[140px] rounded-full bg-slate-100" />
         </div>
@@ -29,7 +29,7 @@ export default function ReadinessScoreRing() {
   }
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+    <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
       <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide text-center mb-4">
         Readiness Score
       </h3>

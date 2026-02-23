@@ -12,14 +12,14 @@ export default function UpcomingTasksSection() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50 border border-slate-200 p-6 animate-pulse">
+      <div className="rounded-2xl card-gradient border border-slate-200 p-6 animate-pulse">
         <div className="h-32 bg-slate-100 rounded" />
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+    <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
       <h3 className="text-base font-semibold text-slate-800 mb-4">Upcoming Tasks & Due Dates</h3>
       {upcomingTasks.length === 0 ? (
         <p className="text-sm text-slate-500">No upcoming assignments or quizzes.</p>

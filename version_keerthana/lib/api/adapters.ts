@@ -114,7 +114,7 @@ export async function fetchCourseWithLessons(courseId: string) {
  */
 export async function checkBackendHealth(): Promise<boolean> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/health`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/health`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     });

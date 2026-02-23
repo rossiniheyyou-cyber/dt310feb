@@ -59,7 +59,7 @@ export default function AdminSettingsPage() {
               </span>
             </div>
             <p className="text-slate-500 text-sm">Your display name and email. You have full access to all data, configurations, and system settings.</p>
-            <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+            <div className="rounded-2xl card-gradient border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Display name</label>
                 <input
@@ -93,7 +93,7 @@ export default function AdminSettingsPage() {
               <h1 className="text-2xl font-semibold text-slate-900">Account & Security</h1>
               <p className="text-slate-500 text-sm mt-1">Admin account password and security. Protect access to platform configuration and user management.</p>
             </div>
-            <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+            <div className="rounded-2xl card-gradient border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Current password</label>
                 <input type="password" className="w-full px-4 py-2.5 rounded-lg border border-slate-300" placeholder="Enter current password" />
@@ -114,7 +114,7 @@ export default function AdminSettingsPage() {
               <h1 className="text-2xl font-semibold text-slate-900">Notifications</h1>
               <p className="text-slate-500 text-sm mt-1">Alerts for user activity, system events, and platform updates.</p>
             </div>
-            <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+            <div className="rounded-2xl card-gradient border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
               <label className="flex items-center justify-between py-2">
                 <span className="text-sm font-medium text-slate-800">Email notifications</span>
                 <input type="checkbox" defaultChecked className="rounded border-slate-300 text-teal-600" />
@@ -135,7 +135,7 @@ export default function AdminSettingsPage() {
               <h1 className="text-2xl font-semibold text-slate-900">Accessibility</h1>
               <p className="text-slate-500 text-sm mt-1">Display and readability options</p>
             </div>
-            <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/20 to-white border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+            <div className="rounded-2xl card-gradient border border-slate-200 p-6 space-y-4 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
               <label className="flex items-center justify-between py-2">
                 <span className="text-sm font-medium text-slate-800">Reduce motion</span>
                 <input type="checkbox" className="rounded border-slate-300 text-teal-600" />

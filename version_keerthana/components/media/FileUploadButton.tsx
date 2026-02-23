@@ -31,28 +31,29 @@ export default function FileUploadButton({
   const [progress, setProgress] = useState(0);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = event.target.files;
+    if (!files?.length) return;
 
+    const fileList = Array.from(files);
     setUploading(true);
-    setProgress(0);
 
     try {
-      const uploadData: MediaUploadRequest = {
-        contentTypeCategory,
-        fileName: file.name,
-        contentType: file.type,
-        courseId,
-        lessonId,
-        assignmentId,
-        resourceId,
-      };
-
-      // Upload file to S3
-      const result = await uploadFileToS3(file, uploadData);
-
+      for (let i = 0; i < fileList.length; i++) {
+        const file = fileList[i];
+        setProgress(Math.round(((i + 0.5) / fileList.length) * 100));
+        const uploadData: MediaUploadRequest = {
+          contentTypeCategory,
+          fileName: file.name,
+          contentType: file.type,
+          courseId,
+          lessonId,
+          assignmentId,
+          resourceId,
+        };
+        const result = await uploadFileToS3(file, uploadData);
+        onUploadSuccess?.(result.fileKey);
+      }
       setProgress(100);
-      onUploadSuccess?.(result.fileKey);
     } catch (error: any) {
       console.error("Upload failed:", error);
       const errorMessage = error.response?.data?.message || error.message || "Upload failed";
@@ -60,7 +61,6 @@ export default function FileUploadButton({
     } finally {
       setUploading(false);
       setProgress(0);
-      // Reset input
       event.target.value = "";
     }
   };
@@ -69,19 +69,14 @@ export default function FileUploadButton({
     <div className="space-y-2">
       <label className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg cursor-pointer hover:bg-teal-700 transition disabled:opacity-50">
         <Upload size={18} />
-        <span>{uploading ? "Uploading..." : "Upload File"}</span>
+        <span>{uploading ? "Uploading..." : "Upload File(s)"}</span>
         <input
           type="file"
           className="hidden"
+          multiple
           onChange={handleFileSelect}
           disabled={uploading}
-          accept={
-            contentTypeCategory === "lesson_video"
-              ? "video/*"
-              : contentTypeCategory === "assignment_submission"
-              ? "*/*"
-              : "*/*"
-          }
+          accept="*/*"
         />
       </label>
       {uploading && (

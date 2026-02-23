@@ -14,7 +14,7 @@ export default function ContinueLearningSection() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50 border border-slate-200 p-6 animate-pulse">
+      <div className="rounded-2xl card-gradient border border-slate-200 p-6 animate-pulse">
         <div className="h-24 bg-slate-100 rounded" />
       </div>
     );
@@ -22,7 +22,7 @@ export default function ContinueLearningSection() {
 
   if (!recent || !recent.pathSlug || !recent.courseId) {
     return (
-      <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/30 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+      <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h3 className="text-base font-semibold text-slate-800">Continue Learning</h3>
@@ -44,7 +44,7 @@ export default function ContinueLearningSection() {
   const resumeUrl = `/dashboard/learner/courses/${recent.pathSlug}/${recent.courseId}`;
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-white via-teal-50/30 to-white border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
+    <div className="rounded-2xl card-gradient border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-slate-800">Continue Learning</h3>
